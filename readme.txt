@@ -1,0 +1,39 @@
+=== SocialBUMP AI Knowledge Exporter ===
+Contributors: socialbump
+Tags: llms.txt, ai, seo, acf
+Requires at least: 6.0
+Tested up to: 7.1
+Requires PHP: 8.0
+Stable tag: 1.0.0
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Generates AI-friendly llms.txt knowledge exports from WordPress content, custom fields and supported page builders.
+
+== Description ==
+
+SocialBUMP AI Knowledge Exporter generates llms.txt, llms-full.txt and llms-details.txt files for a WordPress website.
+
+The plugin is organised as a core exporter with separate extensions for rendered content, Bricks Builder and Elementor. The exporter is the core, with separate modules for rendered content, Bricks Builder and Elementor. Each module detects what it needs and steps in on its own.
+
+== Installation ==
+
+1. Upload and activate the plugin.
+2. Go to SB AI Exporter in the admin menu.
+3. Configure the content sources and output mode.
+4. Generate the knowledge files.
+
+== Changelog ==
+
+= 1.0.0 =
+* First release as a plugin, moved out of WP CodeBox.
+* Settings split across Content, Business and Settings pages, in the SocialBUMP house style.
+* Rebuilds run in batches with a progress bar, so a large site no longer hangs or times out part way through.
+* Status pills show what is current and what needs updating, and double as the button that updates it.
+* A page that has changed can be caught up on its own, without rebuilding the rest.
+* Settings can be exported to a file and imported on another site.
+* Updates delivered from the hub through GitHub releases.
+* The matching WP CodeBox snippets are switched off automatically, so the two copies can never clash.
+
+= 1.0.0 =
+* First release as a plugin, moved out of WP CodeBox.

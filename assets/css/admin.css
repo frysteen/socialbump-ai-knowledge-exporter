@@ -1,0 +1,1576 @@
+.sbaike-wrap .sbaike-intro {
+	max-width: 60ch;
+	font-size: 14px;
+}
+
+.sbaike-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 16px;
+	margin: 20px 0;
+}
+
+.sbaike-card {
+	padding: 18px 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.sbaike-card.is-on {
+	border-left-color: var(--sbaike-accent, #2271b1);
+}
+
+.sbaike-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.sbaike-card__head h2 {
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+.sbaike-card__desc {
+	margin: 10px 0 0;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.sbaike-card__meta {
+	margin: 12px 0 0;
+	color: #787c82;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+/* Hub only: publish release */
+.sbaike-release {
+	margin-top: 32px;
+	padding-top: 24px;
+	border-top: 1px solid #dcdcde;
+}
+
+.sbaike-release > h2 {
+	margin: 0 0 6px;
+	font-size: 18px;
+}
+
+.sbaike-release .notice.inline {
+	margin: 16px 0 0;
+}
+
+.sbaike-release__card {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	border-left-color: var(--sbaike-accent, #2271b1);
+}
+
+.sbaike-release__card h3 {
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+.sbaike-release__card .sbaike-card__desc {
+	margin: 0;
+}
+
+.sbaike-release__card form {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: auto;
+}
+
+.sbaike-release__card label {
+	margin-top: 4px;
+	font-weight: 600;
+}
+
+.sbaike-release__card input[type="text"],
+.sbaike-release__card input[type="password"],
+.sbaike-release__card textarea {
+	width: 100%;
+	max-width: 100%;
+}
+
+.sbaike-release__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 6px;
+}
+/* Settings page boxes */
+.sbaike-section,
+.sbaike-release {
+	margin: 24px 0 0;
+	padding: 20px 24px 24px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+}
+
+.sbaike-section__head {
+	margin-bottom: 16px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.sbaike-section__head h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+	line-height: 1.3;
+}
+
+.sbaike-section__head p {
+	max-width: 70ch;
+	margin: 0;
+	color: #50575e;
+	font-size: 13px;
+}
+
+.sbaike-section .sbaike-grid {
+	margin: 0;
+}
+
+.sbaike-section .sbaike-card,
+.sbaike-release .sbaike-card {
+	background: #f6f7f7;
+}
+
+.sbaike-card__head h3 {
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.3;
+}
+
+/* Toggle switches */
+.sbaike-switch {
+	position: relative;
+	display: inline-flex;
+	flex: 0 0 auto;
+	cursor: pointer;
+}
+
+.sbaike-switch input {
+	position: absolute;
+	z-index: 1;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.sbaike-switch__track {
+	position: relative;
+	display: block;
+	width: 40px;
+	height: 22px;
+	background: #c3c4c7;
+	border-radius: 999px;
+	transition: background-color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.sbaike-switch__dot {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	transition: transform 0.2s ease;
+}
+
+.sbaike-switch:hover .sbaike-switch__track {
+	background: #a7aaad;
+}
+
+.sbaike-switch input:checked + .sbaike-switch__track {
+	background: #00a32a;
+	box-shadow: 0 0 0 1px rgba(0, 163, 42, 0.25), 0 0 10px rgba(0, 163, 42, 0.55);
+}
+
+.sbaike-switch:hover input:checked + .sbaike-switch__track {
+	background: #008a20;
+	box-shadow: 0 0 0 1px rgba(0, 163, 42, 0.3), 0 0 14px rgba(0, 163, 42, 0.7);
+}
+
+.sbaike-switch input:checked + .sbaike-switch__track .sbaike-switch__dot {
+	transform: translateX(18px);
+}
+
+.sbaike-switch input:focus-visible + .sbaike-switch__track {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.sbaike-switch input:disabled {
+	cursor: not-allowed;
+}
+
+.sbaike-switch input:disabled + .sbaike-switch__track,
+.sbaike-switch:hover input:disabled + .sbaike-switch__track {
+	background: #dcdcde;
+}
+
+.sbaike-switch input:disabled + .sbaike-switch__track .sbaike-switch__dot {
+	box-shadow: none;
+}
+
+/* Modules that need a missing plugin */
+.sbaike-card.is-unavailable {
+	border-left-color: #dcdcde;
+}
+
+.sbaike-card.is-unavailable .sbaike-card__head h3,
+.sbaike-card.is-unavailable .sbaike-card__desc {
+	opacity: 0.55;
+}
+
+.sbaike-card__needs {
+	margin: 10px 0 0;
+	color: #8a6116;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+/* Settings link on a card */
+.sbaike-card__link {
+	margin: 10px 0 0;
+	font-size: 13px;
+}
+
+/* Card settings: only while the switch is on */
+.sbaike-card__settings {
+	display: none;
+	margin-top: 14px;
+	padding-top: 14px;
+	border-top: 1px solid #dcdcde;
+}
+
+.sbaike-card.is-on .sbaike-card__settings {
+	display: block;
+}
+
+.sbaike-field + .sbaike-field {
+	margin-top: 12px;
+}
+
+.sbaike-field__label {
+	display: block;
+	margin-bottom: 6px;
+	font-weight: 600;
+}
+
+.sbaike-field__desc {
+	margin: 6px 0 0;
+	color: #646970;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.sbaike-field .wp-picker-container .wp-color-result.button {
+	margin: 0 6px 0 0;
+}
+
+/* SocialBUMP header banner */
+.sbaike-header {
+	margin: 20px 0 0;
+	padding: 22px 28px;
+	background: #16171c;
+	border-radius: 8px;
+	color: #fff;
+}
+
+.sbaike-header__brand {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px;
+}
+
+.sbaike-header__logo {
+	display: block;
+	width: auto;
+	height: 28px;
+}
+
+.wrap .sbaike-header__title {
+	margin: 0;
+	padding: 0 0 0 16px;
+	border-left: 1px solid rgba(255, 255, 255, 0.2);
+	color: #fff;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 28px;
+}
+
+.sbaike-header__intro {
+	max-width: none;
+	margin: 14px 0 0;
+	color: #a7aaad;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.sbaike-wrap .wp-header-end {
+	margin: 0;
+}
+
+/* Publish release intro: full width, balanced lines */
+.sbaike-release .sbaike-intro {
+	max-width: none;
+	text-wrap: balance;
+}
+
+/* Colour field: swatch + text box */
+.sbaike-colour {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.sbaike-colour__swatch {
+	width: 32px;
+	height: 30px;
+	padding: 2px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+}
+
+.sbaike-colour__value {
+	width: 220px;
+}
+
+/* Header version */
+.sbaike-header__version {
+	padding: 3px 9px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 999px;
+	color: #c3c4c7;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+/* Updates panel */
+.sbaike-updates__status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 14px;
+}
+
+.sbaike-updates__badge {
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.sbaike-updates__badge.is-current {
+	background: #edfaef;
+	border: 1px solid #00a32a;
+	color: #00681f;
+}
+
+.sbaike-updates__badge.is-available {
+	background: #fcf3e6;
+	border: 1px solid #dba617;
+	color: #8a6116;
+}
+
+.sbaike-updates__meta {
+	color: #646970;
+	font-size: 13px;
+}
+
+.sbaike-updates__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.sbaike-updates__actions form {
+	margin: 0;
+}
+
+.sbaike-updates__link {
+	font-size: 13px;
+}
+
+/* Header version link */
+a.sbaike-header__version {
+	text-decoration: none;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+a.sbaike-header__version:hover,
+a.sbaike-header__version:focus {
+	background: rgba(255, 255, 255, 0.2);
+	color: #fff;
+}
+
+a.sbaike-header__version.is-outdated {
+	background: #4a0d0d;
+	color: #ff6b6b;
+}
+
+a.sbaike-header__version.is-outdated:hover,
+a.sbaike-header__version.is-outdated:focus {
+	background: #6b1414;
+	color: #ff8f8f;
+}
+
+/* Checklist field */
+.sbaike-checklist {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 6px 12px;
+}
+
+.sbaike-checklist label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Card fields never outgrow the card */
+.sbaike-card .sbaike-field input[type="text"],
+.sbaike-card .sbaike-field input[type="url"],
+.sbaike-card .sbaike-field input[type="number"],
+.sbaike-card .sbaike-field select,
+.sbaike-card .sbaike-field textarea {
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sbaike-card .sbaike-colour {
+	display: flex;
+	max-width: 100%;
+}
+
+.sbaike-card .sbaike-colour__value {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+
+/* Images page */
+.sbaike-images {
+	display: grid;
+	grid-template-columns: minmax(320px, 1fr) minmax(320px, 1.2fr);
+	gap: 20px;
+	align-items: start;
+}
+
+@media (max-width: 1100px) {
+	.sbaike-images {
+		grid-template-columns: 1fr;
+	}
+}
+
+.sbaike-images .sbaike-section {
+	margin: 0;
+}
+
+.sbaike-widths {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 16px;
+	max-width: 320px;
+}
+
+.sbaike-width {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.sbaike-width input[type="number"] {\n\twidth: 90px;\n}
+
+.sbaike-width__name {
+	flex: 1 1 auto;
+	padding: 6px 10px;
+	background: #f0f0f1;
+	border-radius: 4px;
+	color: #50575e;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.sbaike-width__remove {
+	color: #b32d2e;
+	font-size: 15px;
+	line-height: 1;
+	text-decoration: none;
+	opacity: 0.6;
+}
+
+.sbaike-width__remove:hover,
+.sbaike-width__remove:focus {
+	opacity: 1;
+}
+
+.sbaike-images .sbaike-grid {
+	grid-template-columns: 1fr;
+}
+
+/* The banner needs breathing room before whatever follows it */
+.sbaike-wrap .wp-header-end + * {
+	margin-top: 20px;
+}
+
+.sbaike-wrap form > .sbaike-images:first-child,
+.sbaike-wrap > .sbaike-images:first-child {
+	margin-top: 20px;
+}
+
+.sbaike-images .sbaike-section {
+	margin-top: 0;
+}
+
+/* Wider width inputs */
+.sbaike-width input[type="number"] {
+	width: 120px;
+}
+
+.sbaike-widths {
+	max-width: 380px;
+}
+
+/* Rebuild panel */
+.sbaike-rebuild__counts {
+	margin: 0 0 12px;
+}
+
+.sbaike-rebuild__bar {
+	height: 8px;
+	margin-bottom: 10px;
+	background: #f0f0f1;
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.sbaike-rebuild__bar span {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: #85df07;
+	transition: width 0.25s ease;
+}
+
+.sbaike-rebuild__status {
+	min-height: 20px;
+	margin: 0 0 12px;
+	color: #50575e;
+	font-size: 13px;
+}
+
+.sbaike-rebuild__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 14px;
+}
+
+.sbaike-rebuild__force {
+	color: #50575e;
+	font-size: 13px;
+}
+
+/* Size list, on the page and in the media modal */
+.sbaike-sizes {
+	margin: 0 0 10px;
+	font-size: 12px;
+}
+
+.sbaike-sizes li {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 0;
+	padding: 3px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.sbaike-sizes li.is-present span:last-child {
+	color: #00681f;
+}
+
+.sbaike-sizes li.is-missing span:last-child {
+	color: #d63638;
+	font-weight: 600;
+}
+
+.sbaike-sizes li.is-skipped span:last-child {
+	color: #8c8f94;
+}
+
+/**
+ * The real checkbox sits invisibly over the switch. WordPress styles a
+ * disabled checkbox with its own background and makes it partly visible,
+ * which showed as a grey box over the track, so the switch keeps its own
+ * appearance here whatever state it is in.
+ */
+.sbaike-switch input[type="checkbox"],
+.sbaike-switch input[type="checkbox"]:disabled,
+.sbaike-switch input[type="checkbox"]:checked,
+.sbaike-switch input[type="checkbox"]:focus {
+	-webkit-appearance: none;
+	appearance: none;
+	opacity: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 999px;
+	box-shadow: none;
+	outline: 0;
+	min-width: 0;
+	min-height: 0;
+}
+
+.sbaike-switch input[type="checkbox"]:checked::before,
+.sbaike-switch input[type="checkbox"]::before {
+	content: none;
+}
+
+/* The logo takes you back to the main page */
+.sbaike-header__home {
+	display: inline-flex;
+	align-items: center;
+	line-height: 0;
+	border-radius: 4px;
+	transition: opacity 0.15s ease;
+}
+
+.sbaike-header__home:hover,
+.sbaike-header__home:focus {
+	opacity: 0.75;
+}
+
+.sbaike-header__home:focus-visible {
+	outline: 2px solid #85df07;
+	outline-offset: 3px;
+}
+
+/* Feature list on a module card */
+.sbaike-features {
+	margin: 0 0 4px;
+	font-size: 13px;
+}
+
+.sbaike-features li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 3px 0;
+	color: #50575e;
+}
+
+.sbaike-features li.is-off {
+	color: #8c8f94;
+}
+
+.sbaike-dot {
+	flex: 0 0 auto;
+	width: 8px;
+	height: 8px;
+	background: #dcdcde;
+	border-radius: 50%;
+}
+
+.sbaike-features li.is-on .sbaike-dot {
+	background: #85df07;
+	box-shadow: 0 0 0 2px rgba(133, 223, 7, 0.25);
+}
+
+/* The settings link sits at the foot of every card */
+.sbaike-grid {
+	align-items: stretch;
+}
+
+.sbaike-card {
+	display: flex;
+	flex-direction: column;
+}
+
+.sbaike-card__link {
+	margin-top: auto;
+	padding-top: 12px;
+}
+
+/* Divider between the description and the feature list */
+.sbaike-features {
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px solid #e6e7e8;
+}
+
+/* A section heading with its own switch */
+.sbaike-section__head--switch {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.sbaike-section__head--switch p {
+	margin-bottom: 0;
+}
+
+/* Add and reset, at either end of the row */
+.sbaike-width-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 14px;
+}
+
+.wp-core-ui .sbaike-button--danger {
+	background: #fff;
+	border-color: #d63638;
+	color: #d63638;
+}
+
+.wp-core-ui .sbaike-button--danger:hover,
+.wp-core-ui .sbaike-button--danger:focus {
+	background: #d63638;
+	border-color: #d63638;
+	color: #fff;
+}
+
+/* Image report */
+.sbaike-report__panel {
+	margin-top: 4px;
+}
+
+.sbaike-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 12px;
+}
+
+.sbaike-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border-radius: 6px;
+	border-left: 3px solid #c3c4c7;
+}
+
+.sbaike-stat.is-good {
+	border-left-color: #85df07;
+}
+
+.sbaike-stat.is-warn {
+	border-left-color: #dba617;
+	background: #fdf8e8;
+}
+
+.sbaike-stat__value {
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 1.1;
+	color: #1d2327;
+}
+
+.sbaike-stat__label {
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.sbaike-stat__note {
+	font-size: 12px;
+	color: #646970;
+}
+
+.sbaike-report__title {
+	margin: 20px 0 4px;
+	font-size: 14px;
+}
+
+.sbaike-report__note {
+	margin: 0 0 10px;
+	color: #646970;
+	font-size: 12px;
+}
+
+table.sbaike-report {
+	width: 100%;
+	max-width: 700px;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+table.sbaike-report td {
+	padding: 6px 10px 6px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+table.sbaike-report td:last-child {
+	width: 90px;
+	color: #646970;
+	text-align: right;
+}
+
+/**
+ * WordPress styles .button with a display of its own, which beats the browser
+ * rule for the hidden attribute, so hidden buttons kept showing.
+ */
+.sbaike-wrap [hidden] {
+	display: none !important;
+}
+
+/* Orphan list */
+table.sbaike-report td:last-child {
+	width: auto;
+}
+
+.sbaike-report__size {
+	color: #646970;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.wp-core-ui .sbaike-report__delete {
+	min-height: 0;
+	padding: 1px 9px;
+	height: auto;
+	line-height: 1.7;
+	font-size: 11px;
+	color: #d63638;
+	border-color: #d63638;
+}
+
+.wp-core-ui .sbaike-report__delete:hover,
+.wp-core-ui .sbaike-report__delete:focus,
+.wp-core-ui .sbaike-report__delete:active {
+	background: #d63638;
+	border-color: #d63638;
+	color: #fff;
+	box-shadow: none;
+}
+
+.wp-core-ui .sbaike-report__delete:focus {
+	outline: 2px solid transparent;
+	box-shadow: 0 0 0 1px #fff, 0 0 0 3px #d63638;
+}
+
+
+
+/* Progress, shown only while something is running */
+.sbaike-progress {
+	position: relative;
+	margin: 18px 0;
+	padding: 14px 40px 14px 16px;
+	background: #f6f7f7;
+	border-radius: 6px;
+}
+
+.sbaike-progress .sbaike-rebuild__status {
+	margin: 8px 0 0;
+}
+
+.sbaike-progress__close {
+	position: absolute;
+	top: 6px;
+	right: 8px;
+	padding: 0 6px;
+	background: none;
+	border: 0;
+	color: #646970;
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.sbaike-progress__close:hover {
+	color: #1d2327;
+}
+
+/* Orphan list in a box of its own */
+.sbaike-report__orphans {
+	margin-top: 20px;
+	padding: 16px 18px;
+	background: #fbfbfc;
+	border: 1px solid #e6e7e8;
+	border-radius: 6px;
+}
+
+.sbaike-report__orphans .sbaike-report__title {
+	margin-top: 0;
+}
+
+.sbaike-report__orphans table.sbaike-report tr:last-child td {
+	border-bottom: 0;
+}
+
+/* Room between the results, the progress panel and the buttons */
+.sbaike-report__orphans {
+	margin-bottom: 20px;
+}
+
+.sbaike-rebuild .sbaike-stats {
+	margin-bottom: 20px;
+}
+
+.sbaike-progress {
+	margin: 0 0 20px;
+}
+
+.sbaike-rebuild__actions {
+	margin-top: 0;
+}
+
+/* Notes on a width row */
+.sbaike-width__clash,
+.sbaike-width__dupe {
+	font-size: 11px;
+	color: #8a6116;
+	white-space: nowrap;
+}
+
+.sbaike-width__dupe {
+	color: #d63638;
+	font-weight: 600;
+}
+
+.sbaike-width.is-duplicate input[type="number"] {
+	border-color: #d63638;
+}
+
+/* The image being worked on */
+.sbaike-progress__row {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.sbaike-progress__main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.sbaike-progress__thumb {
+	flex: 0 0 auto;
+	width: 44px;
+	height: 44px;
+}
+
+.sbaike-progress__thumb img {
+	width: 44px;
+	height: 44px;
+	object-fit: cover;
+	border-radius: 4px;
+	background: #fff;
+}
+
+/* Orphan rows: in use, or kept on purpose */
+.sbaike-report__used,
+.sbaike-report__keptflag {
+	display: block;
+	margin-top: 2px;
+	font-size: 11px;
+}
+
+.sbaike-report__used {
+	color: #8a6116;
+}
+
+.sbaike-report__keptflag {
+	color: #00681f;
+}
+
+.wp-core-ui .sbaike-report__keep {
+	min-height: 0;
+	margin-right: 6px;
+	padding: 1px 9px;
+	height: auto;
+	line-height: 1.7;
+	font-size: 11px;
+}
+
+
+
+/* A file being kept on purpose */
+
+
+
+
+/* Orphan table */
+table.sbaike-report {
+	width: 100%;
+	max-width: none;
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+table.sbaike-report td {
+	padding: 8px 10px;
+	vertical-align: middle;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+table.sbaike-report tr:last-child td {
+	border-bottom: 0;
+}
+
+table.sbaike-report td:first-child {
+	padding-left: 12px;
+	border-left: 3px solid transparent;
+}
+
+table.sbaike-report td.sbaike-report__size {
+	width: 90px;
+	color: #646970;
+	text-align: right;
+	white-space: nowrap;
+}
+
+table.sbaike-report td.sbaike-report__action {
+	width: 1%;
+	white-space: nowrap;
+	text-align: right;
+}
+
+/* Kept on purpose */
+table.sbaike-report tr.is-kept td {
+	background: #fdf8e8;
+}
+
+table.sbaike-report tr.is-kept td:first-child {
+	border-left-color: #dba617;
+}
+
+/* Row buttons, matched so the columns line up */
+.wp-core-ui .sbaike-report__keep,
+.wp-core-ui .sbaike-report__delete {
+	min-width: 96px;
+	min-height: 0;
+	padding: 2px 10px;
+	height: auto;
+	line-height: 1.8;
+	font-size: 12px;
+	text-align: center;
+}
+
+.wp-core-ui .sbaike-report__keep {
+	margin-right: 8px;
+}
+
+/* Files beyond the first 25, until they are asked for */
+table.sbaike-report tr.is-extra {
+	display: none;
+}
+
+table.sbaike-report tr.sbaike-report__morerow td {
+	padding-top: 10px;
+}
+
+/* Sizes made by WordPress and other plugins */
+.sbaike-othersizes {
+	margin-top: 18px;
+	padding-top: 16px;
+	border-top: 1px solid #e6e7e8;
+}
+
+.sbaike-othersizes h3 {
+	margin: 0 0 4px;
+	font-size: 13px;
+}
+
+.sbaike-othersizes__list {
+	margin: 10px 0 0;
+	max-width: 520px;
+	font-size: 12px;
+}
+
+.sbaike-othersizes__list li {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 0;
+	padding: 3px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.sbaike-othersizes__list code {
+	background: none;
+	padding: 0;
+	font-size: 12px;
+}
+
+.sbaike-othersizes__list span {
+	color: #646970;
+	white-space: nowrap;
+}
+
+/* Choosing which sizes a forced rebuild remakes */
+.sbaike-sizepicker {
+	margin: 0 0 20px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border-radius: 6px;
+}
+
+.sbaike-sizepicker__head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 10px;
+	font-size: 13px;
+}
+
+.sbaike-sizepicker__head span {
+	display: flex;
+	gap: 12px;
+	font-size: 12px;
+}
+
+.sbaike-sizepicker__list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+	gap: 4px 16px;
+}
+
+.sbaike-sizepicker__list label {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 12px;
+}
+
+/* Room above the size picker */
+.sbaike-sizepicker {
+	margin-top: 16px;
+}
+
+/* What each image gained, as it happens */
+.sbaike-progress__log {
+	margin: 10px 0 0;
+	max-height: 220px;
+	overflow-y: auto;
+	font-size: 12px;
+}
+
+.sbaike-progress__log > li {
+	margin: 0 0 8px;
+}
+
+.sbaike-progress__log ul {
+	margin: 2px 0 0 4px;
+}
+
+.sbaike-progress__log ul li {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	color: #50575e;
+}
+
+.sbaike-tick {
+	color: #00681f;
+	font-weight: 600;
+}
+
+/* Editable and fixed sizes, one per line */
+.sbaike-othersizes__list li {
+	gap: 14px;
+	padding: 6px 0;
+}
+
+.sbaike-othersizes__list code {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.sbaike-othersizes__edit {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 0 0 auto;
+}
+
+.sbaike-othersizes__edit input[type="number"] {
+	width: 84px;
+}
+
+.sbaike-othersizes__edit span {
+	color: #646970;
+	white-space: nowrap;
+}
+
+.sbaike-othersizes__list em {
+	flex: 0 0 auto;
+	color: #8c8f94;
+	font-size: 11px;
+	font-style: normal;
+}
+
+.sbaike-othersizes__fixed {
+	flex: 0 0 auto;
+	color: #646970;
+	white-space: nowrap;
+}
+
+.sbaike-othersizes__save {
+	margin: 14px 0 0;
+}
+
+.sbaike-othersizes__save {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.sbaike-othersizes__save a {
+	font-size: 12px;
+}
+
+/* The exporter's own settings page, sitting inside our chrome. */
+.sbaike-core {
+	margin-top: 4px;
+}
+
+.sbaike-core > h2:first-child {
+	margin-top: 0;
+}
+
+.sbaike-section .sbaike-card__meta {
+	margin: -4px 0 8px;
+	color: #646970;
+	font-size: 12px;
+}
+
+/* The exporter's own form inside our panels. */
+.sbaike-section__body > .form-table:first-child,
+.sbaike-section__body > h3:first-child {
+	margin-top: 0;
+}
+
+.sbaike-section__body .form-table th {
+	padding-left: 0;
+}
+
+.sbaike-section__body > p:last-child,
+.sbaike-section__body > .form-table:last-child {
+	margin-bottom: 0;
+}
+
+/* The save bar the exporter prints at the end of its form. */
+.sbaike-core > p.submit,
+.sbaike-section__body > p.submit {
+	margin-bottom: 0;
+}
+
+/* Status pills: one per post type being exported. */
+.sbaike-status {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.sbaike-status__pill {
+	display: inline-block;
+	padding: 5px 12px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.sbaike-status__pill.is-good {
+	background: #edfaef;
+	border: 1px solid #46b450;
+	color: #1e6332;
+}
+
+.sbaike-status__pill.is-stale {
+	background: #fcf0d4;
+	border: 1px solid #dba617;
+	color: #7a5a00;
+}
+
+a.sbaike-status__pill {
+	text-decoration: none;
+	cursor: pointer;
+}
+
+a.sbaike-status__pill.is-stale:hover,
+a.sbaike-status__pill.is-stale:focus {
+	background: #dba617;
+	color: #fff;
+}
+
+/* Unsaved changes: one look for the save button across the plugins.
+   The selectors carry .wp-core-ui and .button so they outrank WordPress's own
+   disabled and primary button rules, which are themselves marked important. */
+.wp-core-ui .button.sb-save--clean,
+.wp-core-ui .button.sb-save--clean:disabled,
+.wp-core-ui .button.sb-save--clean:hover,
+.wp-core-ui .button.sb-save--clean:focus,
+.wp-core-ui .button-primary.sb-save--clean,
+.wp-core-ui .button-primary.sb-save--clean:disabled,
+.wp-core-ui .button-primary.sb-save--clean:hover,
+.wp-core-ui .button-primary.sb-save--clean:focus {
+	background: transparent !important;
+	border: 1px solid #dcdcde !important;
+	color: #a7aaad !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+	opacity: 1 !important;
+	cursor: default;
+}
+
+.wp-core-ui .button.sb-save--dirty,
+.wp-core-ui .button.sb-save--dirty:hover,
+.wp-core-ui .button.sb-save--dirty:focus,
+.wp-core-ui .button-primary.sb-save--dirty,
+.wp-core-ui .button-primary.sb-save--dirty:hover,
+.wp-core-ui .button-primary.sb-save--dirty:focus {
+	background: #fdf8e8 !important;
+	border: 1px solid #dba617 !important;
+	color: #7a5a00 !important;
+	font-weight: 600;
+	box-shadow: none !important;
+	text-shadow: none !important;
+}
+
+.wp-core-ui .button.sb-save--dirty:hover,
+.wp-core-ui .button-primary.sb-save--dirty:hover {
+	background: #fcf0d4 !important;
+}
+
+/* The reminder that follows you down the page. */
+.sb-unsaved {
+	position: fixed;
+	top: 52px;
+	right: 24px;
+	z-index: 9999;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	background: #fdf8e8;
+	border: 1px solid #dba617;
+	border-radius: 6px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	color: #7a5a00;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.sb-unsaved:hover {
+	background: #fcf0d4;
+}
+
+.sb-unsaved[hidden] {
+	display: none;
+}
+
+.sb-unsaved__dot {
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: #dba617;
+}
+
+/* A button with nothing to run right now. */
+.wp-core-ui .button[data-sb-idle]:disabled,
+.wp-core-ui .button-primary[data-sb-idle]:disabled {
+	background: transparent !important;
+	border: 1px solid #dcdcde !important;
+	color: #a7aaad !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+	opacity: 1 !important;
+	cursor: default;
+}
+
+/* The small buttons on each row of the posts picker. */
+.wp-core-ui .sbaike-row-button {
+	margin-left: 6px;
+	padding: 0 8px;
+	font-size: 11px;
+	line-height: 22px;
+	height: 24px;
+	vertical-align: middle;
+}
+
+.wp-core-ui .sbaike-row-button--update {
+	background: #fdf8e8;
+	border-color: #dba617;
+	color: #7a5a00;
+	font-weight: 600;
+}
+
+.wp-core-ui .sbaike-row-button--update:hover,
+.wp-core-ui .sbaike-row-button--update:focus {
+	background: #fcf0d4;
+	border-color: #dba617;
+	color: #7a5a00;
+}
+
+/* The per post type pill sits inline with the heading. */
+.sbaike-core h3 .sbaike-status__pill {
+	font-weight: 600;
+	vertical-align: middle;
+}
+
+/* Rebuilding a whole post type is destructive, so it reads as such. */
+.wp-core-ui .sbaike-rebuild-button,
+.wp-core-ui .sbaike-rebuild-button:focus {
+	background: transparent;
+	border: 1px solid #b32d2e;
+	color: #b32d2e;
+	font-weight: 600;
+	box-shadow: none;
+}
+
+.wp-core-ui .sbaike-rebuild-button:hover,
+.wp-core-ui .sbaike-rebuild-button:active {
+	background: #b32d2e;
+	border-color: #b32d2e;
+	color: #fff;
+}
+
+/* Rebuilding, with something to watch while it happens. */
+.sbaike-job {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(29, 35, 39, 0.6);
+}
+
+.sbaike-job[hidden] {
+	display: none;
+}
+
+.sbaike-job__box {
+	width: min(420px, calc(100vw - 48px));
+	padding: 24px;
+	background: #fff;
+	border-radius: 10px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+	text-align: center;
+}
+
+.sbaike-job__title {
+	margin: 0 0 16px;
+	font-size: 16px;
+}
+
+.sbaike-job__track {
+	height: 10px;
+	background: #f0f0f1;
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.sbaike-job__bar {
+	width: 0;
+	height: 100%;
+	background: var(--sbaike-accent, #2271b1);
+	border-radius: 999px;
+	transition: width 0.2s ease;
+}
+
+.sbaike-job.is-failed .sbaike-job__bar {
+	background: #b32d2e;
+}
+
+.sbaike-job__count {
+	margin: 14px 0 0;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.sbaike-job__current {
+	margin: 4px 0 0;
+	min-height: 18px;
+	color: #646970;
+	font-size: 12px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* What the last rebuild did. */
+.sbaike-report {
+	margin: 20px 0 0;
+	padding: 14px 16px;
+	border-left-width: 4px;
+	border-radius: 6px;
+}
+
+.sbaike-report__title {
+	margin: 0 0 6px !important;
+	font-size: 14px;
+}
+
+.sbaike-report__time {
+	color: #646970;
+	font-size: 12px;
+}
+
+.sbaike-report__list {
+	margin: 0;
+	columns: 2;
+	column-gap: 32px;
+}
+
+.sbaike-report__list li {
+	margin: 0 0 2px;
+	font-size: 13px;
+}
+
+@media (max-width: 782px) {
+	.sbaike-report__list {
+		columns: 1;
+	}
+}
+
+.sbaike-report.is-dismissible {
+	position: relative;
+	padding-right: 44px;
+}
+
+.sbaike-report .notice-dismiss {
+	top: 8px;
+	right: 4px;
+}
