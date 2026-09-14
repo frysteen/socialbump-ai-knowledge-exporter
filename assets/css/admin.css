@@ -1675,3 +1675,49 @@ a.sbaike-status__pill.is-stale:focus {
 .sbaike-release textarea {
 	min-height: 160px;
 }
+
+/* The plugin pages, along the bottom of the banner. */
+.sbaike-header__nav {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sbaike-header__link {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 12px;
+	border-radius: 999px;
+	color: #c3c4c7;
+	font-size: 13px;
+	text-decoration: none;
+}
+
+.sbaike-header__link:hover,
+.sbaike-header__link:focus {
+	background: rgba(255, 255, 255, 0.08);
+	color: #fff;
+	box-shadow: none;
+}
+
+.sbaike-header__link.is-current {
+	background: rgba(255, 255, 255, 0.14);
+	color: #fff;
+	font-weight: 600;
+}
+
+.sbaike-header__badge {
+	display: inline-block;
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: #f0b849;
+	color: #1d2327;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 16px;
+}

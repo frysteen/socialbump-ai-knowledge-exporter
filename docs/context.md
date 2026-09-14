@@ -463,6 +463,27 @@ admin_bar_menu priority 200.
   some accents are unreadable on the dark bar.
 - An action row marked sb-bar-action is-idle looks inactive and ignores hover.
 
+Two signals, and they mean different things. Keep them apart:
+
+- The dot is about this site: content waiting to be rebuilt, an update ready to
+  install. It is what someone looking after the site cares about.
+- Amber wording, and a small count beside it, is about the hub: changes noted but
+  not yet released. Publishing carries it, through attention and count on that
+  item. Never fold this into the dot, and never colour the dot for it: on a client
+  site there is nothing to publish and the distinction is the whole point.
+
+### Getting between the pages
+
+The banner carries a row of links to every page in the plugin, with the one you
+are on marked. The admin menu lists them too, but on a long menu the plugin can
+be a scroll away and its pages only show while you are already on one of them.
+
+- Updates shows the new version number when one is waiting.
+- Publishing shows how many changes are queued, and only exists on the hub, so a
+  client site gets a shorter row and no badges.
+- render_nav() builds it from bar_items(), the same list the admin bar uses, so
+  a new page appears in the menu, the admin bar and the banner at once.
+- It hides itself when a plugin has fewer than two pages.
 ### The SocialBUMP Hub page
 
 class-socialbump-overview.php, identical in each plugin, same arrangement as the

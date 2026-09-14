@@ -704,7 +704,7 @@ class SBAIKE_Admin {
 		}
 
 		echo '<div class="wrap sbaike-wrap">';
-		$this->render_header( __( 'Updates', 'socialbump-ai-knowledge-exporter' ) );
+		$this->render_header( __( 'Updates', 'socialbump-ai-knowledge-exporter' ), __( 'Where this plugin gets its updates, and the settings you can carry across to another site.', 'socialbump-ai-knowledge-exporter' ) );
 		SBAIKE_Updates::render();
 		SBAIKE_Transfer::render();
 		echo '</div>';
@@ -716,7 +716,7 @@ class SBAIKE_Admin {
 		}
 
 		echo '<div class="wrap sbaike-wrap">';
-		$this->render_header( __( 'Publishing', 'socialbump-ai-knowledge-exporter' ) );
+		$this->render_header( __( 'Publishing', 'socialbump-ai-knowledge-exporter' ), __( 'Push a new version to GitHub, from here on the hub. Sites pick it up as a normal plugin update.', 'socialbump-ai-knowledge-exporter' ) );
 		SBAIKE_Release::instance()->render();
 
 		if ( class_exists( 'SBAIKE_Docs' ) ) {
@@ -730,6 +730,47 @@ class SBAIKE_Admin {
 	 * The hr after it tells WordPress to put admin notices below the banner
 	 * rather than inside it.
 	 */
+	/**
+	 * The plugin pages, along the bottom of the banner.
+	 *
+	 * The menu lists them already, but on a long admin menu the plugin can be a
+	 * scroll away, and its pages only show while you are on one of them. This
+	 * keeps them to hand wherever you are.
+	 *
+	 * Updates says so when a new version is waiting, and Publishing says how many
+	 * changes are queued, so neither has to be opened to find out.
+	 */
+	private function render_nav() {
+		$items = $this->bar_items();
+
+		if ( count( $items ) < 2 ) {
+			return;
+		}
+
+		$page    = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		$state   = get_site_transient( 'update_plugins' );
+		$file    = plugin_basename( SBAIKE_FILE );
+		$waiting = ( $state && ! empty( $state->response[ $file ]->new_version ) ) ? $state->response[ $file ]->new_version : '';
+		$notes   = count( (array) get_option( 'sbaike_pending_changes', [] ) );
+
+		echo '<nav class="sbaike-header__nav">';
+
+		foreach ( $items as $slug => $title ) {
+			$badge = '';
+
+			if ( $slug === self::PAGE_SLUG . '-updates' && $waiting !== '' ) {
+				$badge = '<span class="sbaike-header__badge">v' . esc_html( $waiting ) . '</span>';
+			}
+
+			if ( $slug === self::PAGE_SLUG . '-publishing' && $notes > 0 ) {
+				$badge = '<span class="sbaike-header__badge">' . esc_html( number_format_i18n( $notes ) ) . '</span>';
+			}
+
+			echo '<a class="sbaike-header__link' . ( $slug === $page ? ' is-current' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=' . $slug ) ) . '">' . esc_html( $title ) . $badge . '</a>';
+		}
+
+		echo '</nav>';
+	}
 	private function render_header( $title, $intro = '' ) {
 		$state   = get_site_transient( 'update_plugins' );
 		$file    = plugin_basename( SBAIKE_FILE );
@@ -755,6 +796,8 @@ class SBAIKE_Admin {
 		if ( $intro !== '' ) {
 			echo '<p class="sbaike-header__intro">' . esc_html( $intro ) . '</p>';
 		}
+
+		$this->render_nav();
 
 		echo '</div><hr class="wp-header-end">';
 	}
