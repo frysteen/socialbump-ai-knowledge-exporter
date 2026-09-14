@@ -791,6 +791,7 @@ class SBAIKE_Admin {
 					[
 						'ajax'       => admin_url( 'admin-ajax.php' ),
 						'nonce'      => wp_create_nonce( 'sbaike_job' ),
+						'workers'    => (int) apply_filters( 'socialbump_aiknowledge_rebuild_workers', 3 ),
 						'working'    => __( 'Rebuilding', 'socialbump-ai-knowledge-exporter' ),
 						'preparing'  => __( 'Working out what needs doing', 'socialbump-ai-knowledge-exporter' ),
 						/* translators: 1: posts done, 2: posts in total */

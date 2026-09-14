@@ -114,20 +114,66 @@
 
 			progress( 0, job.total );
 
-			return walk( job.job, 0, job.total );
+			return work( job.job, job.total, job.batch || 3 );
 		} ).catch( function ( error ) {
 			stop( error.message );
 		} );
 	}
 
-	function walk( job, offset, total ) {
-		return post( 'sbaike_job_step', { job: job, offset: offset } ).then( function ( data ) {
-			progress( data.offset, data.total, data.done );
+	/**
+	 * Work through the list with a few requests in flight at once.
+	 *
+	 * Nearly all the time goes on fetching each page over HTTP, so the site spends
+	 * most of a rebuild waiting rather than working. Several workers, each taking
+	 * the next chunk of the list, cut that waiting down by roughly the number of
+	 * them.
+	 *
+	 * Each request stands alone: the server is told which offset to render, so
+	 * nothing depends on the order they come back in, and one that fails can be
+	 * asked for again without disturbing the rest.
+	 */
+	function work( job, total, batch ) {
+		var next    = 0;
+		var done    = 0;
+		var workers = Math.min( cfg.workers || 3, Math.ceil( total / batch ) );
+		var names   = [];
 
-			if ( data.more ) {
-				return walk( job, data.offset, data.total );
+		function claim() {
+			if ( next >= total ) {
+				return null;
 			}
 
+			var offset = next;
+
+			next += batch;
+
+			return offset;
+		}
+
+		function worker() {
+			var offset = claim();
+
+			if ( offset === null ) {
+				return Promise.resolve();
+			}
+
+			return post( 'sbaike_job_step', { job: job, offset: offset } ).then( function ( data ) {
+				done += ( data.done || [] ).length;
+				names = data.done && data.done.length ? data.done : names;
+
+				progress( done, total, names );
+
+				return worker();
+			} );
+		}
+
+		var running = [];
+
+		for ( var i = 0; i < workers; i++ ) {
+			running.push( worker() );
+		}
+
+		return Promise.all( running ).then( function () {
 			return finish( job );
 		} );
 	}

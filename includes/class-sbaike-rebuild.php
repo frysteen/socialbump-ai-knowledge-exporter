@@ -164,11 +164,22 @@ class SBAIKE_Rebuild {
 		$slice = array_slice( $ids, $offset, self::BATCH );
 		$done  = [];
 
+		// The post type leads the name, so the progress says where it has got to.
+		$labels = [];
+
 		foreach ( $slice as $id ) {
 			$core->cache_post( $id );
 
+			$type = get_post_type( $id );
+
+			if ( ! isset( $labels[ $type ] ) ) {
+				$object           = get_post_type_object( $type );
+				$labels[ $type ] = $object ? $object->labels->singular_name : $type;
+			}
+
 			$title  = get_the_title( $id );
-			$done[] = $title !== '' ? html_entity_decode( $title, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) : ( '#' . $id );
+			$title  = $title !== '' ? html_entity_decode( $title, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) : ( '#' . $id );
+			$done[] = $labels[ $type ] . ': ' . $title;
 		}
 
 		$position = $offset + count( $slice );

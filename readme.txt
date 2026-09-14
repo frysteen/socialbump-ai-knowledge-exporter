@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.0.2 =
+* Rebuilding now runs three requests at once, which roughly halves a full rebuild: 177 posts went from 246 seconds to 133.
+* The progress panel names the post type as well as the post, so a long rebuild says where it has got to.
 
 = 1.0.1 =
 * Renamed to SocialBUMP SEO for AI throughout.

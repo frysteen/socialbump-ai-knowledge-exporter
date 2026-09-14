@@ -336,10 +336,24 @@ cannot be rebuilt in one request. It used to try, and the page simply hung until
 something gave up.
 
 SBAIKE_Rebuild runs the work in batches over AJAX. A job is a list of post IDs in
-a transient. The browser asks for three at a time, each request doing a little and
+a transient. The browser asks for a few at a time, each request doing a little and
 returning, then one final call assembles the files. Nothing runs long enough to be
 cut off, and a request that does die takes nothing with it: the browser tracks the
 position and already cached posts stay cached.
+
+Three requests run at once, because nearly all the time goes on waiting for a page
+to come back over HTTP rather than on any work the site is doing. Each request is
+told which offset to render, so nothing depends on the order they return in and a
+failed one can simply be asked for again. The count is kept by the browser rather
+than taken from the server, since the offsets no longer arrive in order.
+
+Measured on a site of 177 posts: one at a time took 246 seconds, three at once
+took 133, so about 0.75 seconds a post. It is not three times faster because the
+site is now rendering three pages at once and each takes a little longer under
+that load. More workers buy very little and start to make the site sluggish for
+anyone browsing it mid rebuild, so three is the number unless a host says
+otherwise. The filter socialbump_aiknowledge_rebuild_workers changes it, and one
+is the safe answer on a host that objects.
 
 Scopes: everything, stale, type, type-stale, post. A rebuild clears the cache for
 what it covers first; an update does not, so only changed posts re-render.
@@ -347,6 +361,9 @@ what it covers first; an update does not, so only changed posts re-render.
 Anything carrying data-sbaike-job runs through it: Full Rebuild, Rebuild All on a
 post type, the amber pill on a post type, and Update on a single post row. With
 JavaScript off they still work as plain links, all in one go.
+
+While it runs, the panel names what it is on, with the post type first: Treatment:
+Healite, Page: About. Labels are looked up once per type per batch.
 
 Afterwards the page reloads and shows a report: a line per post type with counts,
 plus taxonomies, ACF options fields and business details, since those are written
