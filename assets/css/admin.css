@@ -1633,3 +1633,45 @@ a.sbaike-status__pill.is-stale:focus {
 	border-color: #b32d2e;
 	color: #b32d2e;
 }
+
+/* Publishing: the token and the zip stack in one column, publishing beside them.
+   Placed rather than reordered, so the markup and the reading order stay as they are. */
+.sbaike-release .sbaike-grid {
+	display: grid;
+	grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.1fr);
+	align-items: start;
+	gap: 16px;
+}
+
+.sbaike-release .sbaike-grid > .sbaike-card:nth-child(1) {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.sbaike-release .sbaike-grid > .sbaike-card:nth-child(2) {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+}
+
+.sbaike-release .sbaike-grid > .sbaike-card:nth-child(3) {
+	grid-column: 1;
+	grid-row: 2;
+}
+
+@media (max-width: 960px) {
+	.sbaike-release .sbaike-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.sbaike-release .sbaike-grid > .sbaike-card:nth-child(1),
+	.sbaike-release .sbaike-grid > .sbaike-card:nth-child(2),
+	.sbaike-release .sbaike-grid > .sbaike-card:nth-child(3) {
+		grid-column: 1;
+		grid-row: auto;
+	}
+}
+
+/* The release notes box, tall enough to match the two cards beside it. */
+.sbaike-release textarea {
+	min-height: 160px;
+}

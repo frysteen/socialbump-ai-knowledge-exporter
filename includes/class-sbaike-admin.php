@@ -32,6 +32,9 @@ class SBAIKE_Admin {
 
 		add_action( 'admin_menu', [ $this, 'add_menu' ], 20 );
 		add_action( 'admin_enqueue_scripts', [ $this, 'styles' ] );
+
+		// The shared overview page, when more than one SocialBUMP plugin is about.
+		add_action( 'admin_menu', [ $this, 'register_overview' ], 5 );
 		add_filter( 'wp_redirect', [ $this, 'return_after_save' ] );
 
 		// Late, so the core has already put its own node in the bar to hang these off.
@@ -202,6 +205,31 @@ class SBAIKE_Admin {
 		return substr( $html, 0, $first ) . $section . substr( $html, $first );
 	}
 
+	/** Tell the shared overview page about this plugin. */
+	public function register_overview() {
+		if ( ! class_exists( 'SocialBUMP_Overview' ) ) {
+			return;
+		}
+
+		SocialBUMP_Overview::register(
+			[
+				'id'      => 'seo-for-ai',
+				'name'    => __( 'SEO for AI', 'socialbump-ai-knowledge-exporter' ),
+				'version' => SBAIKE_VERSION,
+				'file'    => plugin_basename( SBAIKE_FILE ),
+				'pages'   => $this->bar_items(),
+				'notes'   => count( (array) get_option( 'sbaike_pending_changes', [] ) ),
+				'css'      => SBAIKE_URL . 'assets/css/admin.css',
+				'css_time' => file_exists( SBAIKE_PATH . 'assets/css/admin.css' ) ? filemtime( SBAIKE_PATH . 'assets/css/admin.css' ) : 0,
+				'logo'     => SBAIKE_URL . 'assets/img/socialbump-logo-light.svg',
+				'accent_var' => '--sbaike-accent',
+				'hub'     => function_exists( 'sbaike_is_hub' ) && sbaike_is_hub(),
+				'release' => ( function_exists( 'sbaike_is_hub' ) && sbaike_is_hub() && class_exists( 'SBAIKE_Release' ) )
+					? [ SBAIKE_Release::instance(), 'render' ]
+					: null,
+			]
+		);
+	}
 	public function render_main() {
 		$this->render_settings( 'settings' );
 	}
@@ -736,7 +764,12 @@ class SBAIKE_Admin {
 	 * SVG data icons to match the admin menu.
 	 */
 	private function menu_icon() {
-		$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill="black" fill-rule="evenodd" d="M6.5 5h7a5 5 0 0 1 0 10h-7a5 5 0 0 1 0-10zm7 2.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z"/></svg>';
+		// The SocialBUMP mark, shared with the other plugins.
+		if ( class_exists( 'SocialBUMP_Overview' ) ) {
+			return SocialBUMP_Overview::brand_icon();
+		}
+
+		$svg = '<svg xmlns=' . chr( 34 ) . 'http://www.w3.org/2000/svg' . chr( 34 ) . ' viewBox=' . chr( 34 ) . '0 0 20 20' . chr( 34 ) . '><path fill=' . chr( 34 ) . '#ffffff' . chr( 34 ) . ' d=' . chr( 34 ) . 'M6.5 5h7a5 5 0 0 1 0 10h-7a5 5 0 0 1 0-10zm7 2.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z' . chr( 34 ) . '/></svg>';
 
 		return 'data:image/svg+xml;base64,' . base64_encode( $svg );
 	}
@@ -945,10 +978,15 @@ class SBAIKE_Admin {
 		$pages = [];
 
 		foreach ( $items as $slug => $title ) {
+			// Publishing says how many changes are waiting to go out.
+			$waiting = $slug === self::PAGE_SLUG . '-publishing' ? count( (array) get_option( 'sbaike_pending_changes', [] ) ) : 0;
+
 			$pages[] = [
-				'title'   => $title,
-				'href'    => admin_url( 'admin.php?page=' . $slug ),
-				'current' => $slug === $current,
+				'title'     => $title,
+				'href'      => admin_url( 'admin.php?page=' . $slug ),
+				'current'   => $slug === $current,
+				'attention' => $waiting > 0,
+				'count'     => $waiting,
 			];
 		}
 

@@ -463,6 +463,53 @@ admin_bar_menu priority 200.
   some accents are unreadable on the dark bar.
 - An action row marked sb-bar-action is-idle looks inactive and ignores hover.
 
+### The SocialBUMP Hub page
+
+class-socialbump-overview.php, identical in each plugin, same arrangement as the
+admin bar: first to load defines the class, the others register with it.
+
+- A top level SocialBUMP Hub menu, but only on the hub and only when more than
+  one plugin is active. It therefore disappears by itself on every site built
+  from the blueprint, which is the point: there is nothing to publish there.
+- A card per plugin: version, whether an update is waiting, how many changes are
+  queued for the next release, and links to its pages. The count is an amber pill
+  that jumps down to that plugin publishing panel.
+- Below that, each plugin publishing panel in turn, with the plugin name slid in
+  as the heading inside the panel, so all of them go out from one screen.
+- The item in the admin bar opens this page when it exists, and the first
+  plugin otherwise.
+
+register() takes id, name, version, file and pages, and optionally notes, css,
+css_time, logo, accent_var, hub, and release, a callback that draws that plugin
+publishing panel.
+
+Two things about the page are easy to get wrong, and both have been:
+
+- It belongs to no plugin in particular, so it loads every registered stylesheet,
+  and each one is versioned by when the file changed rather than by the plugin
+  version. Version it by the plugin and a browser serves yesterday CSS after every
+  edit, which is exactly what happened.
+- Each plugin styles itself from its own CSS variable, and nothing sets those on a
+  page that belongs to none of them, so the page works out the accent itself and
+  sets every registered variable. Without that the panels fall back to the
+  WordPress blue and look nothing like the rest.
+
+### After an update
+
+Updating a plugin swaps its files out mid request. If you were on one of its own
+pages, the page you land on afterwards can still be running the old code, so its
+menus never register and the plugin appears to have vanished until you navigate
+somewhere else. Each plugin now clears the compiled copies of its own files on
+upgrader_process_complete, which settles it.
+
+### What a client site must not carry
+
+The hub is the blueprint new sites are built from, so whatever is in its database
+travels with every copy. On any site that is not the hub, each plugin deletes its
+GitHub token, its queued release notes and its release cache when an admin page
+loads. A token has no business on a client site.
+
+If you add anything else that only the hub should know, delete it there too.
 ### Unsaved changes, and the save button
 
 Any form marked data-sb-dirty is watched. The save button sits disabled reading
@@ -497,8 +544,18 @@ with important and would otherwise win.
   something missing. The left edge carries the accent when live.
 - Pills: prefix-status__pill, is-good green, is-stale amber. An amber one that
   can be acted on is a link, and clicking it does the thing it describes.
-- Menu icon: the same toggle switch SVG, recoloured by WordPress. Each plugin
-  positions its menu next to the others rather than at a fixed spot.
+- Menu icon: the SocialBUMP exclamation, shared by all four items through
+  SocialBUMP_Overview::brand_icon(). Each plugin positions its menu next to the
+  others rather than at a fixed spot.
+- WordPress does not recolour an SVG menu icon. It only recolours Dashicons,
+  which are a font. An SVG given as a menu icon becomes a background image and
+  keeps whatever colour is baked into it, so ours is white and the dimming when
+  idle, and the brightening on hover, are done in CSS to match the icons around
+  it. Build the SVG by concatenation with chr( 34 ): a quote mangled in the
+  middle of it produces markup that silently draws nothing.
+- Publishing lays out as two columns: the token and the zip stacked on the left,
+  publishing beside them. The cards are placed with CSS grid rather than
+  reordered, so the markup and the reading order stay as they are.
 - The accent comes from the admin colour scheme, chosen by saturation so a
   washed out swatch is never picked, and exposed as --prefix-accent.
 

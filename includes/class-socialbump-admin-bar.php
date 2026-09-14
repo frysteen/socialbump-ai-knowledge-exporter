@@ -127,11 +127,16 @@ if ( ! class_exists( 'SocialBUMP_Admin_Bar' ) ) {
 
 			$first = reset( $plugins );
 
+			// The hub page when there is one, otherwise the first plugin.
+			$home = ( class_exists( 'SocialBUMP_Overview' ) && SocialBUMP_Overview::available() )
+				? admin_url( 'admin.php?page=socialbump' )
+				: $first['href'];
+
 			$bar->add_node(
 				[
 					'id'    => self::PARENT,
 					'title' => self::dot( $attention ) . 'SocialBUMP',
-					'href'  => $first['href'],
+					'href'  => $home,
 					'meta'  => [ 'title' => $tip, 'class' => self::class_for( $current ) ],
 				]
 			);
@@ -182,12 +187,23 @@ if ( ! class_exists( 'SocialBUMP_Admin_Bar' ) ) {
 					[
 						'id'     => $id . '-page-' . $i,
 						'parent' => $id,
-						'title'  => esc_html( $item['title'] ),
+						'title'  => esc_html( $item['title'] ) . self::count( $item ),
 						'href'   => $item['href'],
-						'meta'   => [ 'class' => self::class_for( ! empty( $item['current'] ) ) ],
+						'meta'   => [ 'class' => trim( self::class_for( ! empty( $item['current'] ) ) . ( ! empty( $item['attention'] ) ? ' sb-bar-pending' : '' ) ) ],
 					]
 				);
 			}
+		}
+
+		/** A small count beside a page that is waiting on you. */
+		private static function count( $item ) {
+			$number = isset( $item['count'] ) ? (int) $item['count'] : 0;
+
+			if ( $number < 1 ) {
+				return '';
+			}
+
+			return '<span class="sb-bar-count">' . esc_html( number_format_i18n( $number ) ) . '</span>';
 		}
 
 		private static function class_for( $current ) {
@@ -220,6 +236,10 @@ if ( ! class_exists( 'SocialBUMP_Admin_Bar' ) ) {
 			// No link means WordPress draws an empty item, and it colours both on hover.
 			$css .= '#wpadminbar .sb-bar-action.is-idle > .ab-item,#wpadminbar .sb-bar-action.is-idle > .ab-empty-item,#wpadminbar .sb-bar-action.is-idle:hover > .ab-item,#wpadminbar .sb-bar-action.is-idle:hover > .ab-empty-item,#wpadminbar .sb-bar-action.is-idle > .ab-item:focus{color:#787c82 !important;opacity:0.65;cursor:default;pointer-events:none;}';
 			$css .= '#wpadminbar .sb-bar-action:not(.is-idle) > .ab-item,#wpadminbar .sb-bar-action:not(.is-idle):hover > .ab-item,#wpadminbar .sb-bar-action:not(.is-idle) > .ab-item:focus{color:#f0b849 !important;font-weight:600;}';
+
+			// A page with something waiting on it, such as changes to publish.
+			$css .= '#wpadminbar .sb-bar-pending > .ab-item,#wpadminbar .sb-bar-pending:hover > .ab-item,#wpadminbar .sb-bar-pending > .ab-item:focus{color:#f0b849 !important;font-weight:600;}';
+			$css .= '#wpadminbar .sb-bar-count{display:inline-block;min-width:17px;height:17px;margin-left:7px;padding:0 4px;border-radius:9px;background:#f0b849;color:#1d2327;font-size:11px;font-weight:700;line-height:17px;text-align:center;vertical-align:1px;}';
 
 			echo '<style>' . $css . '</style>';
 		}
