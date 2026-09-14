@@ -1,6 +1,6 @@
 <?php
 /**
- * Social Bump AI Knowledge Exporter - Rendered Content Renderer
+ * SocialBUMP SEO for AI - Rendered Content Renderer
  * Version: 1.0
  *
  * Hooks the socialbump_aiknowledge_post_content_markdown filter to provide

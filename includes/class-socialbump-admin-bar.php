@@ -66,8 +66,17 @@ if ( ! class_exists( 'SocialBUMP_Admin_Bar' ) ) {
 			self::$booted = true;
 
 			add_action( 'admin_bar_menu', [ __CLASS__, 'render' ], 200 );
+			/**
+			 * Printed in the footer as well as the head.
+			 *
+			 * A plugin registers while the bar is being built, which in the admin is
+			 * after the head has already gone out, so a head only style would never
+			 * appear. Printing once is guaranteed either way.
+			 */
 			add_action( 'admin_head', [ __CLASS__, 'styles' ] );
 			add_action( 'wp_head', [ __CLASS__, 'styles' ] );
+			add_action( 'admin_footer', [ __CLASS__, 'styles' ] );
+			add_action( 'wp_footer', [ __CLASS__, 'styles' ] );
 		}
 		/** A coloured dot for the menu title. */
 		private static function dot( $attention ) {
@@ -191,15 +200,26 @@ if ( ! class_exists( 'SocialBUMP_Admin_Bar' ) ) {
 		 * Printed rather than enqueued, because the bar shows on the front end too.
 		 */
 		public static function styles() {
-			if ( ! is_admin_bar_showing() ) {
+			static $printed = false;
+
+			if ( $printed || ! is_admin_bar_showing() ) {
 				return;
 			}
 
-			$css = '#wpadminbar .sb-bar-current > .ab-item{color:' . self::accent() . ';font-weight:600;}';
+			$printed = true;
+
+			// Bold rather than coloured: an admin colour scheme accent can read badly
+			// against the dark bar, and this has to look right in all of them.
+			$css = '#wpadminbar .sb-bar-current > .ab-item{color:#fff !important;font-weight:600;}';
 
 			// A plugin inside the shared item opens its own pages to the side.
-			$css .= '#wpadminbar #wp-admin-bar-' . self::PARENT . ' .ab-submenu .menupop > .ab-item:after{content:\' \\25b8 \';float:right;opacity:0.6;}';
-			$css .= '#wpadminbar #wp-admin-bar-' . self::PARENT . ' .ab-submenu .menupop > .ab-sub-wrapper{left:100%;top:-1px;}';
+			$css .= '#wpadminbar #wp-admin-bar-' . self::PARENT . ' .ab-submenu .menupop{position:relative;}';
+			$css .= '#wpadminbar #wp-admin-bar-' . self::PARENT . ' .ab-submenu .menupop > .ab-sub-wrapper{left:100%;top:0;margin:0;}';
+
+			// An action with nothing to do reads as such; one with work waiting stands out.
+			// No link means WordPress draws an empty item, and it colours both on hover.
+			$css .= '#wpadminbar .sb-bar-action.is-idle > .ab-item,#wpadminbar .sb-bar-action.is-idle > .ab-empty-item,#wpadminbar .sb-bar-action.is-idle:hover > .ab-item,#wpadminbar .sb-bar-action.is-idle:hover > .ab-empty-item,#wpadminbar .sb-bar-action.is-idle > .ab-item:focus{color:#787c82 !important;opacity:0.65;cursor:default;pointer-events:none;}';
+			$css .= '#wpadminbar .sb-bar-action:not(.is-idle) > .ab-item,#wpadminbar .sb-bar-action:not(.is-idle):hover > .ab-item,#wpadminbar .sb-bar-action:not(.is-idle) > .ab-item:focus{color:#f0b849 !important;font-weight:600;}';
 
 			echo '<style>' . $css . '</style>';
 		}

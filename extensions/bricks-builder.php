@@ -1,11 +1,11 @@
 <?php
 /**
- * SocialBump AI Knowledge Exporter - Bricks Builder Extension
+ * SocialBUMP SEO for AI - Bricks Builder Extension
  *
  * Version: 1.0
- * Requires: SocialBump AI Knowledge Exporter core 1.19+
+ * Requires: SocialBUMP SEO for AI core 1.19+
  *
- * Adds Bricks Builder support to the SocialBump AI Knowledge Exporter:
+ * Adds Bricks Builder support to the SocialBUMP SEO for AI:
  *   - Detects Bricks-built pages (reads _bricks_page_content_2)
  *   - Extracts the page's Bricks element tree as markdown
  *   - Resolves Bricks dynamic tags ({post_title}, {acf_field_name}, etc.)

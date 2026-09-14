@@ -1,10 +1,10 @@
-=== SocialBUMP AI Knowledge Exporter ===
+=== SocialBUMP SEO for AI ===
 Contributors: socialbump
 Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,18 +12,28 @@ Generates AI-friendly llms.txt knowledge exports from WordPress content, custom 
 
 == Description ==
 
-SocialBUMP AI Knowledge Exporter generates llms.txt, llms-full.txt and llms-details.txt files for a WordPress website.
+SocialBUMP SEO for AI generates llms.txt, llms-full.txt and llms-details.txt files for a WordPress website.
 
 The plugin is organised as a core exporter with separate extensions for rendered content, Bricks Builder and Elementor. The exporter is the core, with separate modules for rendered content, Bricks Builder and Elementor. Each module detects what it needs and steps in on its own.
 
 == Installation ==
 
 1. Upload and activate the plugin.
-2. Go to SB AI Exporter in the admin menu.
+2. Go to SB SEO for AI in the admin menu.
 3. Configure the content sources and output mode.
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.0.1 =
+* Renamed to SocialBUMP SEO for AI throughout.
+* Page headings now read the plugin name followed by the page you are on.
+* Admin bar marks the page you are on plainly, rather than in the admin colour scheme accent, which reads badly in some schemes.
+* An action in the admin bar with nothing to do now looks inactive, and one with work waiting stands out.
+* The plugin now carries its own notes at docs/context.md, and they can be read and edited on the Publishing page.
+* ACF Field Visibility can now leave a field out of both files at once, not just one.
+* The Content page marks any field a visibility rule affects, and a field left out of both cannot be ticked, since it would not be exported anyway.
+* The plugin notes now describe every panel and setting in detail, not just the overall shape.
 
 = 1.0.0 =
 * First release as a plugin, moved out of WP CodeBox.

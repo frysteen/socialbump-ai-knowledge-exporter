@@ -1,11 +1,11 @@
 <?php
 /**
- * SocialBump AI Knowledge Exporter - Elementor Extension
+ * SocialBUMP SEO for AI - Elementor Extension
  *
  * Version: 1.0
- * Requires: SocialBump AI Knowledge Exporter core 1.66+
+ * Requires: SocialBUMP SEO for AI core 1.66+
  *
- * Adds Elementor support to the SocialBump AI Knowledge Exporter:
+ * Adds Elementor support to the SocialBUMP SEO for AI:
  *   - Detects Elementor-built pages (reads _elementor_edit_mode / _elementor_data)
  *     and labels them "Content Builder: Elementor" in the details file.
  *   - Corrects the "Not applicable" line to "Empty" for editor-less post types

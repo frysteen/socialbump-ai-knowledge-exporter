@@ -59,7 +59,7 @@ class SBAIKE_Admin {
 
 	public function add_menu() {
 		add_menu_page(
-			__( 'AI Knowledge Exporter', 'socialbump-ai-knowledge-exporter' ),
+			__( 'SocialBUMP SEO for AI', 'socialbump-ai-knowledge-exporter' ),
 			__( 'SB SEO for AI', 'socialbump-ai-knowledge-exporter' ),
 			'manage_options',
 			self::PAGE_SLUG,
@@ -122,7 +122,7 @@ class SBAIKE_Admin {
 		$h1_start = strpos( $html, '<h1' );
 		$h1_end   = $h1_start === false ? false : strpos( $html, '</h1>', $h1_start );
 
-		if ( $h1_end !== false && strpos( substr( $html, $h1_start, $h1_end - $h1_start ), 'AI Knowledge Exporter' ) !== false ) {
+		if ( $h1_end !== false && strpos( substr( $html, $h1_start, $h1_end - $h1_start ), 'SEO for AI' ) !== false ) {
 			$html = substr( $html, 0, $h1_start ) . substr( $html, $h1_end + 5 );
 		}
 
@@ -169,8 +169,8 @@ class SBAIKE_Admin {
 		}
 
 		$titles = [
-			'settings' => [ __( 'AI Knowledge Exporter', 'socialbump-ai-knowledge-exporter' ), __( 'How the files are built and served.', 'socialbump-ai-knowledge-exporter' ) ],
-			'business' => [ __( 'Business Details', 'socialbump-ai-knowledge-exporter' ), __( 'The business context written into the top of every exported file.', 'socialbump-ai-knowledge-exporter' ) ],
+			'settings' => [ __( 'Settings', 'socialbump-ai-knowledge-exporter' ), __( 'How the files are built and served.', 'socialbump-ai-knowledge-exporter' ) ],
+			'business' => [ __( 'Business', 'socialbump-ai-knowledge-exporter' ), __( 'The business context written into the top of every exported file.', 'socialbump-ai-knowledge-exporter' ) ],
 			'content'  => [ __( 'Content', 'socialbump-ai-knowledge-exporter' ), __( 'What goes into the files: post types, taxonomies and the fields that come with them.', 'socialbump-ai-knowledge-exporter' ) ],
 		];
 
@@ -690,6 +690,10 @@ class SBAIKE_Admin {
 		echo '<div class="wrap sbaike-wrap">';
 		$this->render_header( __( 'Publishing', 'socialbump-ai-knowledge-exporter' ) );
 		SBAIKE_Release::instance()->render();
+
+		if ( class_exists( 'SBAIKE_Docs' ) ) {
+			SBAIKE_Docs::render();
+		}
 		echo '</div>';
 	}
 	/**
@@ -712,7 +716,11 @@ class SBAIKE_Admin {
 
 		echo '<div class="sbaike-header"><div class="sbaike-header__brand">';
 		echo '<a class="sbaike-header__home" href="' . $home . '"><img class="sbaike-header__logo" src="' . $logo . '" alt="SocialBUMP" width="203" height="28"></a>';
-		echo '<h1 class="sbaike-header__title">' . esc_html( $title ) . '</h1>';
+		// The plugin name, then the page, so you always know where you are.
+		$name = __( 'SEO for AI', 'socialbump-ai-knowledge-exporter' );
+		$page = $title !== $name ? ' <span class="sbaike-header__page">' . esc_html( $title ) . '</span>' : '';
+
+		echo '<h1 class="sbaike-header__title">' . esc_html( $name ) . $page . '</h1>';
 		echo '<a class="sbaike-header__version' . ( $pending ? ' is-outdated' : '' ) . '" href="' . $updates . '" title="' . esc_attr( $tip ) . '">v' . esc_html( SBAIKE_VERSION ) . ( $pending ? ' &rarr; v' . esc_html( $pending ) : '' ) . '</a>';
 		echo '</div>';
 
@@ -906,10 +914,19 @@ class SBAIKE_Admin {
 		// Take the exporter's own actions across, then take its item down.
 		foreach ( (array) $bar->get_nodes() as $node ) {
 			if ( isset( $node->parent ) && $node->parent === $id ) {
+				$meta = (array) $node->meta;
+
+				// The update action reads as amber when there is work, grey when there is none.
+				if ( substr( $node->id, -7 ) === '-update' ) {
+					$idle = isset( $meta['class'] ) && strpos( $meta['class'], 'socialbump-ab-disabled' ) !== false;
+
+					$meta['class'] = trim( ( isset( $meta['class'] ) ? $meta['class'] . ' ' : '' ) . 'sb-bar-action' . ( $idle ? ' is-idle' : '' ) );
+				}
+
 				$actions[] = [
 					'title' => $node->title,
 					'href'  => $node->href,
-					'meta'  => (array) $node->meta,
+					'meta'  => $meta,
 				];
 
 				$bar->remove_node( $node->id );

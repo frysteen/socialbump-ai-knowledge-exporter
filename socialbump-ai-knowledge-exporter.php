@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: SocialBUMP AI Knowledge Exporter
+ * Plugin Name: SocialBUMP SEO for AI
  * Plugin URI:  https://socialbump.com.au
  * Description: Generates AI-friendly llms.txt knowledge exports from WordPress content, custom fields and supported page builders.
- * Version:     1.0.0
+ * Version:     1.0.1
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      SocialBUMP
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SBAIKE_VERSION', '1.0.0' );
+define( 'SBAIKE_VERSION', '1.0.1' );
 define( 'SBAIKE_FILE', __FILE__ );
 define( 'SBAIKE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SBAIKE_URL', plugin_dir_url( __FILE__ ) );
@@ -169,7 +169,7 @@ function sbaike_snippets_notice() {
 	delete_option( 'sbaike_disabled_snippets' );
 
 	echo '<div class="notice notice-warning is-dismissible"><p><strong>';
-	esc_html_e( 'AI Knowledge Exporter is now running as a plugin.', 'socialbump-ai-knowledge-exporter' );
+	esc_html_e( 'SEO for AI is now running as a plugin.', 'socialbump-ai-knowledge-exporter' );
 	echo '</strong> ';
 	esc_html_e( 'These WP CodeBox snippets were switched off, because the same code cannot run twice:', 'socialbump-ai-knowledge-exporter' );
 	echo ' ' . esc_html( implode( ', ', (array) $names ) ) . '. ';
@@ -233,6 +233,9 @@ function sbaike_boot() {
 	if ( sbaike_is_hub() ) {
 		require_once SBAIKE_PATH . 'includes/class-sbaike-release.php';
 		SBAIKE_Release::instance()->boot();
+
+		require_once SBAIKE_PATH . 'includes/class-sbaike-docs.php';
+		SBAIKE_Docs::boot();
 	}
 }
 add_action( 'plugins_loaded', 'sbaike_boot', 10 );
