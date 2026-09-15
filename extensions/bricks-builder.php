@@ -7,7 +7,8 @@
  *
  * Adds Bricks Builder support to the SocialBUMP SEO for AI:
  *   - Detects Bricks-built pages (reads _bricks_page_content_2)
- *   - Extracts the page's Bricks element tree as markdown
+ *   - Does not extract element content: the renderer fetches Bricks pages like
+ *     any other. This file only reports detection and template relationships
  *   - Resolves Bricks dynamic tags ({post_title}, {acf_field_name}, etc.)
  *   - Detects which Bricks templates are assigned to which post types and
  *     taxonomies, and surfaces those in the section header lines
@@ -328,6 +329,95 @@ function socialbump_bricks_format_template_line( ?array $entry ): string {
     return 'Bricks - ' . $name . ' [bricks_template id="' . (int) $entry['id'] . '"]';
 }
 
+
+
+/* =============================================================================
+ * Hook 0: A saved template marks the posts drawn through it as stale
+ *
+ * A post's cached render comes from its template as much as from its own
+ * content, but only its own modified date was being watched, so editing
+ * Single - Service left every treatment looking current while the export was
+ * out of date. Bricks calls wp_update_post when a template is saved in the
+ * builder, and writes the template's content and conditions to two meta keys,
+ * so all three are watched and the first one to fire in a request wins.
+ *
+ * Only conditions that name post types or particular posts are mapped. A
+ * header, footer, popup or section template cannot be tied to specific posts
+ * from its conditions, and headers and footers are stripped anyway, so those
+ * are left alone: after editing one of those, use Full Rebuild.
+ * ===========================================================================*/
+
+function socialbump_bricks_template_touched( $template_id ): void {
+    static $done = [];
+
+    $template_id = (int) $template_id;
+
+    if ( ! $template_id || isset( $done[ $template_id ] ) || get_post_type( $template_id ) !== 'bricks_template' ) {
+        return;
+    }
+
+    if ( wp_is_post_revision( $template_id ) || wp_is_post_autosave( $template_id ) ) {
+        return;
+    }
+
+    $done[ $template_id ] = true;
+
+    if ( ! class_exists( 'SocialBump_AI_Knowledge_Exporter' ) ) {
+        return;
+    }
+
+    $core = SocialBump_AI_Knowledge_Exporter::instance();
+
+    if ( ! method_exists( $core, 'touch_post_type' ) ) {
+        return;
+    }
+
+    $settings   = get_post_meta( $template_id, '_bricks_template_settings', true );
+    $settings   = is_string( $settings ) ? maybe_unserialize( $settings ) : $settings;
+    $conditions = is_array( $settings ) && isset( $settings['templateConditions'] ) && is_array( $settings['templateConditions'] )
+        ? $settings['templateConditions']
+        : [];
+
+    foreach ( $conditions as $condition ) {
+        if ( ! is_array( $condition ) || empty( $condition['main'] ) ) {
+            continue;
+        }
+
+        if ( $condition['main'] === 'postType' && ! empty( $condition['postType'] ) && is_array( $condition['postType'] ) ) {
+            foreach ( $condition['postType'] as $post_type ) {
+                $core->touch_post_type( (string) $post_type );
+            }
+        }
+
+        if ( $condition['main'] === 'ids' && ! empty( $condition['ids'] ) && is_array( $condition['ids'] ) ) {
+            $core->touch_posts( array_map( 'intval', $condition['ids'] ) );
+        }
+    }
+}
+
+add_action( 'save_post_bricks_template', 'socialbump_bricks_template_touched', 20 );
+
+add_action(
+    'updated_post_meta',
+    function ( $meta_id, $object_id, $meta_key ) {
+        if ( $meta_key === '_bricks_page_content_2' || $meta_key === '_bricks_template_settings' ) {
+            socialbump_bricks_template_touched( $object_id );
+        }
+    },
+    10,
+    3
+);
+
+add_action(
+    'added_post_meta',
+    function ( $meta_id, $object_id, $meta_key ) {
+        if ( $meta_key === '_bricks_page_content_2' || $meta_key === '_bricks_template_settings' ) {
+            socialbump_bricks_template_touched( $object_id );
+        }
+    },
+    10,
+    3
+);
 
 
 /* =============================================================================

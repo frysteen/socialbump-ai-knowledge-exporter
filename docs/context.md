@@ -45,13 +45,48 @@ This is the expensive part and the heart of the plugin.
 2. It strips the site furniture using a list of CSS selectors you can edit under
    Settings, Content Rendering.
 3. What is left becomes Markdown, and is cached against the post.
-4. A builder module may step in first: Bricks reads the element tree directly,
-   which is better than reading the rendered page.
+4. A builder module can step in first through the same filter. None does yet:
+   the Bricks module reports which posts are built with Bricks and which
+   templates apply, but the content of every post, Bricks or not, comes from the
+   renderer.
 
 Because it fetches over HTTP, a site in coming soon or maintenance mode would
 hand back the holding page. The fetch carries a short lived token and Bricks is
 told to stand its holding page down for that one request. Another coming soon
 plugin can be handled by hooking socialbump_aiknowledge_render_request.
+
+## What the converter does to builder output
+
+html_to_markdown() in the core is a chain of regular expressions, and the order
+matters. Things it does that are easy to break:
+
+- Adjacent buttons. A builder writes a button group as sibling anchors with no
+  whitespace between them, so without help they render as one word. The rule
+  that splits them matches on the class attribute, so it has to run before the
+  aggressive pass strips every class. It once ran after, and matched nothing
+  on renderer output. A second rule then puts a space between any two anchors
+  still touching, class or no class.
+- Card grids. A heading inside a list item becomes a bold link on the bullet,
+  and when a single paragraph follows it joins the same line:
+  - **[Title](url)**: excerpt. That is done in render_list_item_content().
+- Tables. One line per row, cells separated by bars, a rule under a header row.
+- The hero. The renderer module drops, from the first dozen lines of a post,
+  any whole line equal to the title, the custom title, the subtitle or the
+  excerpt, since the meta lines above the body already carry them. Exact match
+  only, so a later mention in prose is never touched. That is
+  strip_repeated_intro_lines() in rendered-content-renderer.php.
+
+Measured on a site of 177 posts, those four took the full file from 137 glued
+button pairs to none, 677 headings on bullets to none, and 80 repeated titles
+to one, with the index, meta lines and slim file unchanged.
+
+Not done on purpose: body headings start at # under a ### post heading, so the
+hierarchy is inverted. Demoting them would touch every file for a gain a
+language model does not need.
+
+A template section repeated on every page of a type, such as a related items
+grid, is content, not chrome, so the converter leaves it. Strip it by class
+under Settings, Content Rendering if it is bloat.
 
 ## The three files, and how they differ
 
@@ -130,7 +165,10 @@ something is a matter of dropping a file in. The renderer loads first because th
 builder modules build on it, and a fatal inside one is caught.
 
 - rendered-content-renderer.php, the shared renderer. Always on.
-- bricks-builder.php, reads Bricks element content and template relationships.
+- bricks-builder.php, reports which posts are built with Bricks and the template
+  relationships, for the meta lines and the details file. It does not read
+  element content; the renderer does that for Bricks pages too.
+  It also watches template saves and marks the posts they cover as stale.
 - elementor.php, the same idea for Elementor.
 
 A module registers itself with register_extension( slug, info ), where info
@@ -172,7 +210,7 @@ core file prints. Change that markup and check these still work.
 | includes/class-sbaike-transfer.php | 5 KB | settings export and import |
 | includes/class-sbaike-docs.php | 6 KB | these notes and the Publishing panel |
 | extensions/rendered-content-renderer.php | 18 KB | fetch, strip, convert to Markdown |
-| extensions/bricks-builder.php | 19 KB | read Bricks elements and templates |
+| extensions/bricks-builder.php | 19 KB | Bricks detection and template relationships, not content |
 | extensions/elementor.php | 7 KB | the same for Elementor |
 | assets/js/rebuild.js | 4 KB | the progress bar |
 
@@ -358,20 +396,31 @@ is the safe answer on a host that objects.
 Scopes: everything, stale, type, type-stale, post. A rebuild clears the cache for
 what it covers first; an update does not, so only changed posts re-render.
 
-Anything carrying data-sbaike-job runs through it: Full Rebuild, Rebuild All on a
-post type, the amber pill on a post type, and Update on a single post row. With
-JavaScript off they still work as plain links, all in one go.
+Anything carrying data-sbaike-job runs through it: Update Files, Full Rebuild,
+Rebuild All on a post type, the amber pill on a post type, and Update on a single
+post row. With JavaScript off they still work as plain links, all in one go.
 
-While it runs, the panel names what it is on, with the post type first: Treatment:
-Healite, Page: About. Labels are looked up once per type per batch.
+A job refuses to start while the settings form has unsaved changes, and says so,
+because it reloads the page when it finishes and would throw them away. The save
+button being enabled is the signal it reads.
 
-Afterwards the page reloads and shows a report: a line per post type with counts,
-plus taxonomies, ACF options fields and business details, since those are written
-fresh every time the files are assembled.
+While it runs, the panel names what it is on, with the post type first and in
+bold: Treatment: Healite, Page: About. Labels are looked up once per type per
+batch. A timer in the top right corner counts the seconds.
 
-Update Files and Save changes are deliberately not batched: they are the same
-submit, which saves your settings first. The batch runner already has a stale
-scope ready if a site ever needs it.
+Afterwards the report appears inside the same box: a line per post type with
+counts, plus taxonomies, ACF options fields and business details, since those
+are written fresh every time the files are assembled. Close reloads the page so
+the pills catch up. finish() returns the report in its response;
+SBAIKE_Rebuild::report_body() draws it, and report() still reads the older
+transient path for anything that might set it.
+
+Save changes is not batched: it saves the settings and rewrites the files in one
+request, re-rendering only posts that are actually stale, which with a healthy
+cache is about a second. Update Files used to be that same submit, and with the
+old fingerprint (below) that meant a full re-render hanging the page. It now runs
+the stale scope through the batch runner instead, and does not save settings
+first: the unsaved changes guard sends you to Save.
 
 ## Staleness
 
@@ -379,6 +428,30 @@ A post is stale when it has changed since its cache was written. Counts appear a
 pills on Content, on each post type heading, and as a dot in the admin bar.
 post_cache_is_fresh() is the single answer to the question; the global count is
 cached in a transient for five minutes and flushed when anything changes it.
+
+Each cache entry also carries a fingerprint of the settings it was rendered
+under, and a mismatch counts as stale. The cache holds only the rendered body,
+so the fingerprint covers only what the renderer reads: the strip selectors and
+their initialised flag. Nothing else. It used to include the ACF field picks,
+the options fields and the post type list as well, none of which touch the body,
+so unticking one options field re-rendered every post on the site. That was the
+hang people saw on Save.
+
+Narrowing it meant every existing entry carried a value the new fingerprint could
+never match, so maybe_restamp_cache() runs once on admin_init after the update
+and rewrites the stamps a hundred rows at a time, leaving the markdown alone. It
+records that it has run in sbaike_fingerprint_scheme. If the fingerprint is ever
+narrowed again, bump that scheme number and the restamp runs once more.
+
+A post is also stale when something it is rendered through has changed since,
+which its own modified date cannot show. touch_post_type() and touch_posts()
+record a timestamp in sbaike_touched, and both staleness checks hold it against
+the cache stamp. The Bricks module calls them when a template is saved in the
+builder (save_post_bricks_template, and the two meta keys Bricks writes),
+reading the template conditions for the post types or post IDs it applies to.
+A header, footer, popup or section template cannot be mapped to posts from its
+conditions, so editing one of those still needs a Full Rebuild. The cache
+entries are kept, so the files serve the old render until the next Update.
 
 ## The scheduled update
 
@@ -392,13 +465,15 @@ same limit the buttons used to have. Worth batching if it ever bites.
 | Name | Holds |
 | --- | --- |
 | socialbump_ai_knowledge_exporter_settings | every setting |
-| _socialbump_ai_cache (post meta) | the rendered Markdown per post |
+| _socialbump_ai_cache (post meta) | the rendered Markdown per post, with cached_at and the settings fingerprint in the same value |
 | socialbump_ai_virtual_store | the three files, when serving virtually |
 | socialbump_ai_rewrite_version | the rewrite rules version |
 | sbaike_global_stale_count | cached count, five minutes |
 | sbaike_cron_last_run | when the schedule last ran |
 | sbaike_github_token | encrypted, hub only |
 | sbaike_pending_changes | notes for the next release |
+| sbaike_fingerprint_scheme | which fingerprint scheme the cache stamps use, so the one-off restamp runs once |
+| sbaike_touched | when each post type, or particular post, was last touched by a template save |
 
 The four names beginning socialbump_ai are shared with the old snippets on
 purpose. That is what lets a site move from snippets to plugin with every setting
@@ -413,6 +488,19 @@ and every cached page intact. Do not rename them. Everything else is sbaike_.
   not make them private.
 - The renderer strips by CSS selector. A theme change can quietly take content
   out of the export, so check the output after a redesign.
+- The cache stamp lives inside the same meta value as the markdown, so anything
+  that checks staleness loads the markdown too: the stale count behind the admin
+  bar dot, and the Content page. Leave update_post_meta_cache on for those
+  listings. Switching it off was tried and it made things worse, because
+  get_post_meta() then fetches each post meta one query at a time, 14 queries
+  became 184, and the markdown was loaded anyway. The only real fix is moving the
+  stamp to its own small meta key, and that has not been done.
+- get_term_posts_index() is the one listing that never reads meta, so it does
+  turn the meta cache off.
+- clear_all_post_caches() goes through delete_metadata() rather than a raw
+  $wpdb->delete, so the object cache is cleared with the rows. A raw delete left
+  the old values cached on a site with a persistent object cache, and the
+  staleness checks kept reading them.
 
 <!-- shared:start -->
 
@@ -499,6 +587,11 @@ admin bar: first to load defines the class, the others register with it.
   as the heading inside the panel, so all of them go out from one screen.
 - The item in the admin bar opens this page when it exists, and the first
   plugin otherwise.
+- Between the cards and the publishing panels sits a master prompt for starting a
+  chat that could touch more than one plugin. It builds itself from whatever is
+  registered, so a fourth plugin would appear in it without being told, and it
+  covers what the per plugin prompts cannot: that shared code lands everywhere,
+  and that the shared block of the notes must stay identical in every copy.
 
 register() takes id, name, version, file and pages, and optionally notes, css,
 css_time, logo, accent_var, hub, and release, a callback that draws that plugin
@@ -544,8 +637,16 @@ Attributes a button can carry:
 - data-sb-label-dirty: the wording to use when there is something to save, for a
   button whose resting label says there is nothing.
 - data-sb-always-on: never disable this one. Used for buttons that do work
-  rather than save, such as Full Rebuild.
+  rather than save, such as Full Rebuild, and for any submit that is an action
+  rather than a save, such as Reset to defaults.
 - data-sb-idle=1: nothing to run right now, so sit inactive until there is.
+
+The reminder saves with the button that actually saves: one marked data-sb-save,
+then the primary button, and only then the first submit in the form. A form can
+hold more than one submit and not all of them save. The image sizes form has
+Reset to defaults sitting above Save changes, and the reminder used to submit
+whichever came first, so clicking it reset the sizes rather than saving them.
+Worth remembering when adding any second submit to a form.
 
 Styling: .sb-save--clean is a grey outline on transparent, .sb-save--dirty is
 pale yellow with an amber border, matching the reminder. Both selectors lead with
@@ -594,6 +695,10 @@ code and shows a Publishing page.
 - The notes box fills from prefix_log_change() calls made since the last release,
   and the list empties once a release goes out. Call it after any change worth
   telling someone about, in their words rather than yours.
+- Only log what a client site would notice. The Hub page, the Publishing page and
+  anything else that exists only on the hub never reach a client site, so a change
+  to them earns no note and no release of its own. It rides along with the next
+  real one. A release exists to tell other sites something changed for them.
 - Publishing retries on a 5xx, checks the zip actually attached, and checks again
   before undoing anything, because GitHub has published a release and then failed
   the response.
@@ -713,5 +818,11 @@ folder, and anything not carried back to the hub is gone.
   to the right of the whole menu.
 - The admin menu can be renamed by an admin menu plugin. Admin and Site
   Enhancements holds its own titles and wins over whatever the plugin registers.
+- opcache_invalidate() only reaches the PHP process it runs in. On a LiteSpeed
+  host with opcache.revalidate_freq set to 60, every other process keeps running
+  the old file for up to a minute after a write. A rebuild started in that
+  window ran half on old code and half on new, and stamped the cache both ways.
+  A fresh request is not proof until a minute has passed, and nothing that
+  writes stamps or data formats should be exercised in that minute.
 
 <!-- shared:end -->

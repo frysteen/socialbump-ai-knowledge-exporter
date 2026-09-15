@@ -51,6 +51,7 @@ class SocialBump_AI_Knowledge_Exporter {
     private string $option_name = 'socialbump_ai_knowledge_exporter_settings';
     private string $version = '1.0.0';
     private ?array $settings_cache = null;
+    private ?array $touched_cache = null;
     private ?string $settings_fingerprint_cache = null;
     private array $excluded_lookup_cache = [];
     private array $posts_query_cache = [];
@@ -267,6 +268,7 @@ class SocialBump_AI_Knowledge_Exporter {
         // template_redirect, and flush the rules once per version bump.
         add_action( 'init', [ $this, 'register_rewrite_rule' ], 5 );
         add_action( 'init', [ $this, 'maybe_flush_rewrite_rules' ], 20 );
+        add_action( 'admin_init', [ $this, 'maybe_restamp_cache' ] );
         add_filter( 'query_vars', [ $this, 'add_query_vars' ] );
         add_action( 'template_redirect', [ $this, 'maybe_serve_virtual_file' ], 1 );
     }
@@ -641,6 +643,7 @@ class SocialBump_AI_Knowledge_Exporter {
     }
 
     private function clear_request_caches(): void {
+        $this->touched_cache              = null;
         $this->settings_cache             = null;
         $this->settings_fingerprint_cache = null;
         $this->excluded_lookup_cache      = [];
@@ -883,6 +886,8 @@ class SocialBump_AI_Knowledge_Exporter {
     public function get_posts_for_picker( string $post_type ): array {
         $is_blog = ( $post_type === 'post' );
 
+        // The meta cache is primed on purpose: the Content page reads each post's
+        // cache status per row, and without priming that is one query per post.
         $items = $this->get_posts_cached( [
             'post_type'      => $post_type,
             'post_status'    => [ 'publish', 'draft', 'pending', 'private', 'future' ],
@@ -1563,7 +1568,7 @@ class SocialBump_AI_Knowledge_Exporter {
 
             <p style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
                 <button type="submit" class="button button-primary button-large"
-                    form="sb-settings-form" data-sb-always-on data-sb-idle="<?php echo $this->get_global_stale_count() > 0 ? '0' : '1'; ?>" name="socialbump_mode" value="update">
+                    form="sb-settings-form" data-sb-always-on data-sb-idle="<?php echo $this->get_global_stale_count() > 0 ? '0' : '1'; ?>" name="socialbump_mode" value="update" data-sbaike-job="stale" data-sbaike-title="Updating changed posts">
                     Update Files
                 </button>
                 <button type="submit" class="button button-secondary button-large"
@@ -2639,7 +2644,7 @@ class SocialBump_AI_Knowledge_Exporter {
                 </div>
 
                 <p style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-                    <button type="submit" class="button button-primary button-large" data-sb-always-on data-sb-idle="<?php echo $this->get_global_stale_count() > 0 ? '0' : '1'; ?>" name="socialbump_mode" value="update">
+                    <button type="submit" class="button button-primary button-large" data-sb-always-on data-sb-idle="<?php echo $this->get_global_stale_count() > 0 ? '0' : '1'; ?>" name="socialbump_mode" value="update" data-sbaike-job="stale" data-sbaike-title="Updating changed posts">
                         Update Files
                     </button>
                     <button type="submit" class="button button-secondary button-large" data-sb-always-on name="socialbump_mode" value="rebuild" data-sbaike-job="everything" data-sbaike-title="Rebuilding everything">
@@ -3820,14 +3825,16 @@ class SocialBump_AI_Knowledge_Exporter {
     private const CACHE_META_KEY = '_socialbump_ai_cache';
 
     /**
-     * Compute a fingerprint of the settings that affect rendered output.
+     * A fingerprint of the settings that change a post's cached markdown.
      *
-     * When any of these change, every post's cached markdown is
-     * potentially wrong (a new strip selector, a reordered field, a
-     * different ACF pick), so the fingerprint changing invalidates the
-     * whole cache. Settings that DON'T affect per-post body rendering
-     * (business name, compliance notes) are deliberately excluded so
-     * editing them doesn't force a full re-render.
+     * The cache holds only the rendered body. ACF picks, options fields, post
+     * types and taxonomies are all assembled from the settings when the files
+     * are written, so they have no bearing on what is cached and are left out.
+     * The strip selectors are the one setting the renderer reads, so a change
+     * to them is the one thing that makes every cached body wrong.
+     *
+     * It used to include the ACF and post type picks as well, so unticking an
+     * options field re-rendered every post on the site. See maybe_restamp_cache().
      */
     public function get_settings_fingerprint(): string {
         if ( $this->settings_fingerprint_cache !== null ) {
@@ -3837,12 +3844,7 @@ class SocialBump_AI_Knowledge_Exporter {
         $settings = $this->get_settings();
 
         $relevant = [
-            'acf_fields'               => $settings['acf_fields'] ?? [],
-            'acf_fields_order'         => $settings['acf_fields_order'] ?? [],
-            'acf_options_fields'       => $settings['acf_options_fields'] ?? [],
-            'acf_options_fields_order' => $settings['acf_options_fields_order'] ?? [],
-            'post_types'               => $settings['post_types'] ?? [],
-            'renderer_strip_selectors' => $settings['renderer_strip_selectors'] ?? '',
+            'renderer_strip_selectors'       => $settings['renderer_strip_selectors'] ?? '',
             'renderer_selectors_initialised' => $settings['renderer_selectors_initialised'] ?? false,
         ];
 
@@ -3875,7 +3877,58 @@ class SocialBump_AI_Knowledge_Exporter {
             return null;
         }
 
+        // Something the post is rendered through changed since, such as its
+        // builder template: stale.
+        if ( $this->touched_at( $post ) > (int) $cache['cached_at'] ) {
+            return null;
+        }
+
         return (string) $cache['markdown'];
+    }
+
+    /**
+     * Mark every post of a type, or particular posts, as needing a re-render.
+     *
+     * A post's own modified date says nothing about the template it is drawn
+     * through, so a template edit left every post looking current while the
+     * export was out of date. A module that knows about templates (Bricks does)
+     * calls one of these when a template is saved, and the timestamp is held
+     * against the cache stamp from then on. The cache entries are kept, so the
+     * files still serve the old render until the next Update, the same as an
+     * edited post.
+     */
+    public function touch_post_type( string $post_type ): void {
+        $touched = (array) get_option( 'sbaike_touched', [] );
+
+        $touched['types'][ $post_type ] = time();
+
+        update_option( 'sbaike_touched', $touched, false );
+        $this->touched_cache = null;
+        $this->flush_global_stale_count();
+    }
+
+    public function touch_posts( array $post_ids ): void {
+        $touched = (array) get_option( 'sbaike_touched', [] );
+
+        foreach ( $post_ids as $id ) {
+            $touched['posts'][ (int) $id ] = time();
+        }
+
+        update_option( 'sbaike_touched', $touched, false );
+        $this->touched_cache = null;
+        $this->flush_global_stale_count();
+    }
+
+    /** When something this post renders through was last touched, or 0. */
+    private function touched_at( WP_Post $post ): int {
+        if ( $this->touched_cache === null ) {
+            $this->touched_cache = (array) get_option( 'sbaike_touched', [] );
+        }
+
+        $type = (int) ( $this->touched_cache['types'][ $post->post_type ] ?? 0 );
+        $one  = (int) ( $this->touched_cache['posts'][ $post->ID ] ?? 0 );
+
+        return max( $type, $one );
     }
 
     /**
@@ -3970,6 +4023,9 @@ class SocialBump_AI_Knowledge_Exporter {
         $fingerprint = $this->get_settings_fingerprint();
         $excluded    = $this->get_excluded_post_lookup( $post_type, $settings );
 
+        // The meta cache is primed on purpose: the cache stamp is read for every
+        // post below, and get_post_meta() would otherwise fetch each post's meta
+        // one query at a time. Tried without it: same memory, twelve times the queries.
         $posts = $this->get_posts_cached( [
             'post_type'      => $post_type,
             'post_status'    => 'publish',
@@ -4001,6 +4057,12 @@ class SocialBump_AI_Knowledge_Exporter {
             // Post edited since cached → stale.
             $modified_gmt = get_post_modified_time( 'U', true, $post );
             if ( $modified_gmt !== false && (int) $modified_gmt > (int) $cache['cached_at'] ) {
+                $stale++;
+                continue;
+            }
+
+            // Its template changed since cached: stale.
+            if ( $this->touched_at( $post ) > (int) $cache['cached_at'] ) {
                 $stale++;
             }
         }
@@ -4062,7 +4124,10 @@ class SocialBump_AI_Knowledge_Exporter {
     public function clear_all_post_caches(): void {
         global $wpdb;
 
-        $wpdb->delete( $wpdb->postmeta, [ 'meta_key' => self::CACHE_META_KEY ] );
+        // Through the meta API rather than a raw delete, so the object cache is
+        // cleared as well. A raw delete leaves the old values cached on a site with a
+        // persistent object cache, and the staleness checks would keep reading them.
+        delete_metadata( 'post', null, self::CACHE_META_KEY, '', true );
         $this->flush_global_stale_count();
     }
 
@@ -6037,6 +6102,9 @@ class SocialBump_AI_Knowledge_Exporter {
                     'terms'    => $term->term_id,
                 ],
             ],
+            // Titles and permalinks only, so the meta cache stays unprimed.
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
         ] );
 
         if ( ! $items ) {
@@ -6231,24 +6299,10 @@ class SocialBump_AI_Knowledge_Exporter {
             $html = preg_replace( "/<{$tag}\b[^>]*>.*?<\/{$tag}>/is", '', $html );
         }
 
-        // 2b. Aggressive pre-cleaning for page-builder render output.
-        if ( $aggressive ) {
-            $html = $this->strip_presentational_attributes( $html );
-            $html = $this->unwrap_structural_containers( $html );
-        }
-
-        // 3. Render shortcodes so dynamic content (e.g. ACF inline tags) survives.
-        $html = do_shortcode( $html );
-
-        // 4. Collapse runs of spaces and tabs, preserving newlines.
-        $html = preg_replace( "/[ \t]+/", ' ', $html );
-
-        // 5. Inline conversions - run BEFORE block conversions so block-level
-        //    callbacks can safely strip remaining tags without losing emphasis.
-        $html = preg_replace( '/<(strong|b)\b[^>]*>(.*?)<\/\1>/is', '**$2**', $html );
-        $html = preg_replace( '/<(em|i)\b[^>]*>(.*?)<\/\1>/is', '*$2*', $html );
-
-        // 5a. Insert a newline separator between adjacent button-style links.
+        // 2a-ii. Insert a newline separator between adjacent button-style links.
+        //     This has to run before the aggressive pass below strips class
+        //     attributes, or the button classes it matches on are already gone.
+        //     It sat after that pass once, and never matched renderer output.
         //     Builders (Bricks, Elementor, Gutenberg) often render button
         //     groups as N sibling <a> tags inside a wrapper div, with no
         //     intermediate whitespace. Default behaviour would concatenate
@@ -6264,6 +6318,27 @@ class SocialBump_AI_Knowledge_Exporter {
             $previous_btn_pass = $html;
             $html = preg_replace( $btn_pattern, "$1\n\n", $html );
         }
+        // 2b. Aggressive pre-cleaning for page-builder render output.
+        if ( $aggressive ) {
+            $html = $this->strip_presentational_attributes( $html );
+            $html = $this->unwrap_structural_containers( $html );
+        }
+        // 2c. Any links still touching each other get a space between them, so
+        //     two adjacent anchors never run into one word. Builders minify their
+        //     markup and leave no whitespace between sibling elements.
+        $html = preg_replace( '/<\/a>(?=<a\b)/i', '</a> ', $html );
+
+        // 3. Render shortcodes so dynamic content (e.g. ACF inline tags) survives.
+        $html = do_shortcode( $html );
+
+        // 4. Collapse runs of spaces and tabs, preserving newlines.
+        $html = preg_replace( "/[ \t]+/", ' ', $html );
+
+        // 5. Inline conversions - run BEFORE block conversions so block-level
+        //    callbacks can safely strip remaining tags without losing emphasis.
+        $html = preg_replace( '/<(strong|b)\b[^>]*>(.*?)<\/\1>/is', '**$2**', $html );
+        $html = preg_replace( '/<(em|i)\b[^>]*>(.*?)<\/\1>/is', '*$2*', $html );
+
 
         $html = preg_replace_callback(
             '/<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is',
@@ -6288,6 +6363,39 @@ class SocialBump_AI_Knowledge_Exporter {
         );
 
         // 6. Block conversions.
+
+        // Tables. Each row becomes a line with the cells separated by a bar,
+        // and a header row is followed by a rule so it reads as a table. Without
+        // this the cells ran together into one word.
+        $html = preg_replace_callback(
+            '/<table\b[^>]*>(.*?)<\/table>/is',
+            function ( $m ) {
+                preg_match_all( '/<tr\b[^>]*>(.*?)<\/tr>/is', $m[1], $rows );
+                $lines = [];
+
+                foreach ( $rows[1] as $row ) {
+                    preg_match_all( '/<(t[dh])\b[^>]*>(.*?)<\/\1>/is', $row, $cells );
+                    $texts = [];
+
+                    foreach ( $cells[2] as $cell ) {
+                        $texts[] = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $cell ) ) );
+                    }
+
+                    if ( ! array_filter( $texts, 'strlen' ) ) {
+                        continue;
+                    }
+
+                    $lines[] = '| ' . implode( ' | ', $texts ) . ' |';
+
+                    if ( count( $lines ) === 1 && stripos( $row, '<th' ) !== false ) {
+                        $lines[] = '|' . str_repeat( ' --- |', count( $texts ) );
+                    }
+                }
+
+                return $lines ? "\n\n" . implode( "\n", $lines ) . "\n\n" : '';
+            },
+            $html
+        );
 
         // Headings h6 → h1 so longer tags can't accidentally match shorter ones.
         for ( $i = 6; $i >= 1; $i-- ) {
@@ -6478,8 +6586,27 @@ class SocialBump_AI_Knowledge_Exporter {
         // Trim leading/trailing whitespace on each line.
         $text = preg_replace( "/^[ \t]+/m", '', $text );
         $text = preg_replace( "/[ \t]+$/m", '', $text );
+        $text = trim( $text );
 
-        return trim( $text );
+        // A heading inside a list item, which is how a builder card grid comes
+        // out (li > h3 > a, then an excerpt), used to render as a markdown heading
+        // on the bullet. Make it bold instead, and when a single paragraph
+        // follows, put the two on one line: - **[Title](url)**: excerpt.
+        $lines = explode( "\n", $text );
+
+        if ( count( $lines ) && preg_match( '/^#{1,6}\s+(.+)$/', $lines[0], $m ) ) {
+            $lines[0] = '**' . trim( $m[1] ) . '**';
+
+            $rest = array_values( array_filter( array_slice( $lines, 1 ), 'strlen' ) );
+
+            if ( count( $rest ) === 1 ) {
+                return $lines[0] . ': ' . $rest[0];
+            }
+
+            $text = implode( "\n", $lines );
+        }
+
+        return $text;
     }
 
     /**
@@ -7309,6 +7436,58 @@ class SocialBump_AI_Knowledge_Exporter {
      * Register the three root-level routes. Always added on init; harmless in
      * physical mode because the disk file shadows the route when present.
      */
+    /**
+     * Restamp the cache once, after the fingerprint was narrowed.
+     *
+     * Before 1.0.5 the fingerprint folded in settings that never touch the
+     * rendered body, so every entry written then carries a value the new
+     * fingerprint can never match. Left alone, each site would face a full
+     * re-render after updating for no reason. The body markdown is still
+     * right, so the stamp is rewritten instead of the content, a row at a
+     * time so a large site does not load its whole cache into memory.
+     *
+     * Runs once, on the first admin load after the update, and records that
+     * it has run. An entry rendered under different strip selectors was stale
+     * before this and is not after it; that one-off imprecision is accepted.
+     */
+    public function maybe_restamp_cache(): void {
+        if ( (int) get_option( 'sbaike_fingerprint_scheme', 1 ) >= 2 ) {
+            return;
+        }
+
+        global $wpdb;
+
+        $fingerprint = $this->get_settings_fingerprint();
+        $last        = 0;
+
+        do {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT meta_id, post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_id > %d ORDER BY meta_id ASC LIMIT 100",
+                    self::CACHE_META_KEY,
+                    $last
+                )
+            );
+
+            foreach ( (array) $rows as $row ) {
+                $last  = (int) $row->meta_id;
+                $cache = maybe_unserialize( $row->meta_value );
+
+                if ( ! is_array( $cache ) || ! isset( $cache['markdown'] ) || ( $cache['fingerprint'] ?? '' ) === $fingerprint ) {
+                    continue;
+                }
+
+                $cache['fingerprint'] = $fingerprint;
+
+                $wpdb->update( $wpdb->postmeta, [ 'meta_value' => maybe_serialize( $cache ) ], [ 'meta_id' => $last ] );
+                wp_cache_delete( (int) $row->post_id, 'post_meta' );
+            }
+        } while ( count( (array) $rows ) === 100 );
+
+        update_option( 'sbaike_fingerprint_scheme', 2, false );
+        $this->flush_global_stale_count();
+    }
+
     public function register_rewrite_rule(): void {
         add_rewrite_rule( '^llms\.txt$',         'index.php?socialbump_ai_llms=slim',    'top' );
         add_rewrite_rule( '^llms-full\.txt$',    'index.php?socialbump_ai_llms=full',    'top' );

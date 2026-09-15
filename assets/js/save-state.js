@@ -112,13 +112,25 @@
 		return note;
 	}
 
+	/**
+	 * Save the form, using the button that actually saves it.
+	 *
+	 * A form can hold more than one submit, and not all of them save: the image
+	 * sizes form has Reset to defaults sitting above Save changes. Submitting with
+	 * whichever came first would send the wrong one, which is exactly what it did.
+	 * So the save button is looked for by name, then by being the primary one, and
+	 * only then does it fall back to the first submit in the form.
+	 */
 	function submit( form ) {
-		var first = Array.prototype.filter.call(
-			form.querySelectorAll( 'input[type=submit], button[type=submit]' ),
-			function ( button ) {
+		var live = function ( list ) {
+			return Array.prototype.filter.call( list, function ( button ) {
 				return ! button.disabled;
-			}
-		)[0];
+			} )[0];
+		};
+
+		var first = live( form.querySelectorAll( '[data-sb-save]' ) )
+			|| live( form.querySelectorAll( 'input[type=submit].button-primary, button[type=submit].button-primary' ) )
+			|| live( form.querySelectorAll( 'input[type=submit], button[type=submit]' ) );
 
 		if ( first && typeof form.requestSubmit === 'function' ) {
 			form.requestSubmit( first );

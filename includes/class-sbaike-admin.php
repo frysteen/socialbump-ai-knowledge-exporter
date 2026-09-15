@@ -876,6 +876,8 @@ class SBAIKE_Admin {
 						'done'       => __( 'Finished', 'socialbump-ai-knowledge-exporter' ),
 						'failed'     => __( 'That did not finish', 'socialbump-ai-knowledge-exporter' ),
 						'retry'      => __( 'Nothing was lost. Close this and try again.', 'socialbump-ai-knowledge-exporter' ),
+						'unsaved'    => __( 'Save your changes first. A rebuild reloads the page, which would lose them.', 'socialbump-ai-knowledge-exporter' ),
+						'close'      => __( 'Close', 'socialbump-ai-knowledge-exporter' ),
 					]
 				) . ';',
 				'before'

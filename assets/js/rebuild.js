@@ -22,6 +22,8 @@
 	var count = null;
 	var current = null;
 	var heading = null;
+	var timer = null;
+	var ticking = null;
 
 	function build() {
 		if ( panel ) {
@@ -33,6 +35,7 @@
 		panel.setAttribute( 'hidden', 'hidden' );
 		panel.innerHTML =
 			'<div class=' + q( 'sbaike-job__box' ) + '>' +
+			'<span class=' + q( 'sbaike-job__timer' ) + '></span>' +
 			'<h2 class=' + q( 'sbaike-job__title' ) + '></h2>' +
 			'<div class=' + q( 'sbaike-job__track' ) + '><div class=' + q( 'sbaike-job__bar' ) + '></div></div>' +
 			'<p class=' + q( 'sbaike-job__count' ) + '></p>' +
@@ -45,6 +48,41 @@
 		bar = panel.querySelector( '.sbaike-job__bar' );
 		count = panel.querySelector( '.sbaike-job__count' );
 		current = panel.querySelector( '.sbaike-job__current' );
+		timer = panel.querySelector( '.sbaike-job__timer' );
+	}
+
+	/** How long the job has been running, in the corner of the box. */
+	function startClock() {
+		var started = Date.now();
+
+		stopClock();
+		timer.textContent = '0s';
+
+		ticking = window.setInterval( function () {
+			var seconds = Math.floor( ( Date.now() - started ) / 1000 );
+
+			timer.textContent = seconds < 60 ? seconds + 's' : Math.floor( seconds / 60 ) + 'm ' + ( seconds % 60 ) + 's';
+		}, 1000 );
+	}
+
+	function stopClock() {
+		if ( ticking ) {
+			window.clearInterval( ticking );
+			ticking = null;
+		}
+	}
+
+	/**
+	 * Whether the settings form has changes that have not been saved.
+	 *
+	 * A job reloads the page when it finishes, which would throw those changes
+	 * away, so it is refused until they are saved. The save button is disabled
+	 * while there is nothing to save, which is the signal read here.
+	 */
+	function unsaved() {
+		var save = document.querySelector( 'form[data-sb-dirty] [data-sb-save], [data-sb-save]' );
+
+		return !! ( save && ! save.disabled );
 	}
 
 	function q( text ) {
@@ -58,7 +96,13 @@
 		bar.style.width = '0%';
 		count.textContent = cfg.preparing;
 		current.textContent = '';
+		panel.classList.remove( 'is-failed' );
+		panel.classList.remove( 'is-done' );
+		Array.prototype.forEach.call( panel.querySelectorAll( '.sbaike-job__report, .sbaike-job__close' ), function ( node ) {
+			node.parentNode.removeChild( node );
+		} );
 		panel.removeAttribute( 'hidden' );
+		startClock();
 	}
 
 	function progress( done, total, names ) {
@@ -68,8 +112,54 @@
 		count.textContent = cfg.counting.replace( '%1$s', done ).replace( '%2$s', total );
 
 		if ( names && names.length ) {
-			current.textContent = names[ names.length - 1 ];
+			name( names[ names.length - 1 ] );
 		}
+	}
+
+	/** The post being worked on, with its post type in bold before the title. */
+	function name( text ) {
+		var at = text.indexOf( ': ' );
+		var strong;
+
+		current.textContent = '';
+
+		if ( at === -1 ) {
+			current.textContent = text;
+
+			return;
+		}
+
+		strong = document.createElement( 'strong' );
+		strong.textContent = text.slice( 0, at );
+		current.appendChild( strong );
+		current.appendChild( document.createTextNode( text.slice( at ) ) );
+	}
+
+	/**
+	 * The report, in the box, with a button to close it.
+	 *
+	 * The page reloads on close so the counts and pills catch up. Reloading
+	 * straight away used to leave the report for the page to show afterwards.
+	 */
+	function report( html ) {
+		var box = panel.querySelector( '.sbaike-job__box' );
+		var wrap = document.createElement( 'div' );
+		var close = document.createElement( 'button' );
+
+		wrap.className = 'sbaike-job__report';
+		wrap.innerHTML = html;
+
+		close.type = 'button';
+		close.className = 'button button-primary sbaike-job__close';
+		close.textContent = cfg.close || 'Close';
+		close.addEventListener( 'click', function () {
+			window.location.reload();
+		} );
+
+		panel.classList.add( 'is-done' );
+		box.appendChild( wrap );
+		box.appendChild( close );
+		close.focus();
 	}
 
 	function post( action, data ) {
@@ -183,14 +273,24 @@
 		current.textContent = '';
 		bar.style.width = '100%';
 
-		return post( 'sbaike_job_finish', { job: job } ).then( function () {
+		return post( 'sbaike_job_finish', { job: job } ).then( function ( data ) {
+			stopClock();
 			count.textContent = cfg.done;
+			current.textContent = '';
+
+			if ( data && data.report ) {
+				report( data.report );
+
+				return;
+			}
+
 			window.location.reload();
 		} );
 	}
 
 	function stop( message ) {
 		build();
+		stopClock();
 
 		panel.classList.add( 'is-failed' );
 		count.textContent = message || cfg.failed;
@@ -205,6 +305,13 @@
 		}
 
 		event.preventDefault();
+
+		if ( unsaved() ) {
+			window.alert( cfg.unsaved || 'Save your changes first.' );
+
+			return;
+		}
+
 		run( link );
 	} );
 }() );

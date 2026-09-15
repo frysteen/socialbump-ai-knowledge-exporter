@@ -227,21 +227,28 @@ class SBAIKE_Rebuild {
 			wp_send_json_error( [ 'message' => __( 'The files could not be written. Check the File Serving setting.', 'socialbump-ai-knowledge-exporter' ) ] );
 		}
 
-		// Left for the page to pick up and show once it reloads.
+		// The report goes back in the response and is shown in the progress box,
+		// with a Close button that reloads the page. It used to be left in a
+		// transient for the page to pick up after the reload.
+		$html = '';
+
 		if ( is_array( $meta ) ) {
-			set_transient(
-				self::PREFIX . 'report_' . get_current_user_id(),
+			$html = self::report_body(
 				[
 					'scope'   => $meta['scope'],
 					'total'   => (int) $meta['total'],
 					'counts'  => (array) $meta['counts'],
 					'seconds' => round( microtime( true ) - (float) $meta['started'], 1 ),
-				],
-				60
+				]
 			);
 		}
 
-		wp_send_json_success( [ 'message' => __( 'Done', 'socialbump-ai-knowledge-exporter' ) ] );
+		wp_send_json_success(
+			[
+				'message' => __( 'Done', 'socialbump-ai-knowledge-exporter' ),
+				'report'  => $html,
+			]
+		);
 	}
 
 	/**
@@ -262,6 +269,17 @@ class SBAIKE_Rebuild {
 
 		delete_transient( $key );
 
+		$quote = chr( 34 );
+
+		return '<div class=' . $quote . 'notice notice-success is-dismissible sbaike-report' . $quote . '>' . self::report_body( $report ) . '</div>';
+	}
+
+	/**
+	 * The report itself: a title line, then a line per post type and one for
+	 * each of the things written fresh every time. Shown in the progress box
+	 * when a job finishes, and once as a notice for the older transient path.
+	 */
+	public static function report_body( array $report ) {
 		$scope = $report['scope'];
 		$lines = [];
 
@@ -319,8 +337,7 @@ class SBAIKE_Rebuild {
 		}
 
 		$quote = chr( 34 );
-		$html  = '<div class=' . $quote . 'notice notice-success is-dismissible sbaike-report' . $quote . '>';
-		$html .= '<p class=' . $quote . 'sbaike-report__title' . $quote . '><strong>' . esc_html( $title ) . '</strong> ';
+		$html  = '<p class=' . $quote . 'sbaike-report__title' . $quote . '><strong>' . esc_html( $title ) . '</strong> ';
 
 		/* translators: %s: seconds taken */
 		$html .= '<span class=' . $quote . 'sbaike-report__time' . $quote . '>' . esc_html( sprintf( __( 'in %s seconds', 'socialbump-ai-knowledge-exporter' ), number_format_i18n( $report['seconds'], 1 ) ) ) . '</span></p>';
@@ -331,6 +348,6 @@ class SBAIKE_Rebuild {
 			$html .= '<li>' . wp_kses( $line, [ 'strong' => [] ] ) . '</li>';
 		}
 
-		return $html . '</ul></div>';
+		return $html . '</ul>';
 	}
 }

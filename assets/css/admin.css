@@ -1482,12 +1482,22 @@ a.sbaike-status__pill.is-stale:focus {
 }
 
 .sbaike-job__box {
+	position: relative;
 	width: min(420px, calc(100vw - 48px));
 	padding: 24px;
 	background: #fff;
 	border-radius: 10px;
 	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
 	text-align: center;
+}
+
+.sbaike-job__timer {
+	position: absolute;
+	top: 10px;
+	right: 14px;
+	color: #a7aaad;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
 }
 
 .sbaike-job__title {
@@ -1508,6 +1518,26 @@ a.sbaike-status__pill.is-stale:focus {
 	background: var(--sbaike-accent, #2271b1);
 	border-radius: 999px;
 	transition: width 0.2s ease;
+}
+
+.sbaike-job__report {
+	margin: 18px 0 0;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border-radius: 6px;
+	text-align: left;
+}
+
+.sbaike-job__report .sbaike-report__list {
+	columns: 1;
+}
+
+.sbaike-job.is-done .sbaike-job__current {
+	display: none;
+}
+
+.wp-core-ui .sbaike-job__close {
+	margin-top: 16px;
 }
 
 .sbaike-job.is-failed .sbaike-job__bar {

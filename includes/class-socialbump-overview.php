@@ -201,6 +201,10 @@ if ( ! class_exists( 'SocialBUMP_Overview' ) ) {
 			$css .= '.sb-overview__heading{scroll-margin-top:60px;}';
 			$css .= '.sb-overview__pages{margin:0;font-size:13px;}';
 			$css .= '.sb-overview__heading{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid #f0f0f1;font-size:16px;}';
+			$css .= '.sb-overview__prompt{margin:24px 0 8px;padding:18px 20px;background:#fff;border:1px solid #dcdcde;border-radius:8px;}';
+			$css .= '.sb-overview__prompt h2{margin:0 0 4px;font-size:15px;}';
+			$css .= '.sb-overview__prompt .description{margin:0 0 10px;}';
+			$css .= '.sb-overview__prompt textarea{font-size:12px;line-height:1.5;}';
 			$css .= '.sb-overview__header{margin:16px 0 0;padding:22px 28px;background:#1d2327;border-radius:8px;}';
 			$css .= '.sb-overview__brand{display:flex;align-items:center;gap:16px;}';
 			$css .= '.sb-overview__logo{display:block;width:203px;height:auto;}';
@@ -251,6 +255,42 @@ if ( ! class_exists( 'SocialBUMP_Overview' ) ) {
 			$pair = array_slice( $colors, -2 );
 
 			return self::saturation( $pair[1] ) > self::saturation( $pair[0] ) + 0.15 ? $pair[1] : $pair[0];
+		}
+		/**
+		 * One prompt for a chat that will work across all of them.
+		 *
+		 * Each plugin publishing page has a prompt for itself. This is the one to
+		 * use when the work spans more than one, or when you do not know yet which
+		 * it will touch, since a change to anything shared lands in all three.
+		 */
+		private static function master_prompt() {
+			$host  = wp_parse_url( home_url(), PHP_URL_HOST );
+			$paths = [];
+
+			foreach ( self::$plugins as $plugin ) {
+				$folder = $plugin['file'] !== '' ? dirname( $plugin['file'] ) : '';
+
+				if ( $folder === '' || $folder === '.' ) {
+					continue;
+				}
+
+				$paths[] = $plugin['name'] . ', at wp-content/plugins/' . $folder . '/docs/context.md';
+			}
+
+			$prompt  = 'You are picking up work on the SocialBUMP WordPress plugins. ';
+			$prompt .= 'There are ' . count( $paths ) . ' of them and they are built to work together, so a change to anything shared lands in all of them. ';
+			$prompt .= 'Everything is developed on the hub, ' . $host . ', which you reach through its Novamira MCP connector. ';
+			$prompt .= 'Before changing anything, read the notes for each one: ' . implode( '; ', $paths ) . '. ';
+			$prompt .= 'They explain what each plugin does, how it is built, and the mistakes already made and fixed. ';
+			$prompt .= 'Each file also carries a shared block, between the shared markers, which is the same in all of them and covers the conventions they hold in common: the admin bar, the save button, the Hub page, the look, and how work gets done and released. ';
+			$prompt .= 'Read one copy of that block properly, and if you change it, change it in every copy so they stay identical. ';
+			$prompt .= 'Keep the notes current: when you change how something works or learn something the hard way, write it in the same session, in the notes for the plugin it belongs to. ';
+			$prompt .= 'Work on the live hub, check your PHP before writing it, and verify a change in a fresh request rather than the one that wrote the file. ';
+			$prompt .= 'Tell me which notes you have read, and what state the plugins are in, before you start. ';
+			$prompt .= 'Before you finish, or any time I say we are done, go back over everything we changed, bring every affected notes file up to date, and tell me exactly what you added or corrected in each. ';
+			$prompt .= 'If nothing needed changing, say so plainly rather than saying nothing.';
+
+			return $prompt;
 		}
 		/** Where the notes count jumps to. */
 		private static function anchor( $id ) {
@@ -331,6 +371,13 @@ if ( ! class_exists( 'SocialBUMP_Overview' ) ) {
 				echo '</div>';
 			}
 
+			echo '</div>';
+
+			// A prompt for a chat that will work across all of them.
+			echo '<div class="sb-overview__prompt">';
+			echo '<h2>' . esc_html__( 'Starting a new chat', 'socialbump' ) . '</h2>';
+			echo '<p class="description">' . esc_html__( 'Copy this in as the first message when the work could touch more than one plugin. Each plugin Publishing page has a narrower one for itself.', 'socialbump' ) . '</p>';
+			echo '<textarea class="large-text code" rows="8" readonly onclick="this.select();">' . esc_textarea( self::master_prompt() ) . '</textarea>';
 			echo '</div>';
 
 			// Publishing, one panel per plugin, so all three go out from here.

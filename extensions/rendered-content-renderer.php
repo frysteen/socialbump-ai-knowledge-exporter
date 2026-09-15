@@ -210,7 +210,67 @@ class SocialBump_AI_Knowledge_Renderer {
         // (![alt](url)) which carries semantic alt text.
         $markdown = $this->strip_bare_image_urls( $markdown );
 
+        // The hero repeats what the meta lines above the body already say.
+        $markdown = $this->strip_repeated_intro_lines( $markdown, $post );
+
         return $markdown;
+    }
+
+    /**
+     * Drop opening lines that only repeat the post's own meta lines.
+     *
+     * A builder hero usually prints the title, the subtitle and the summary
+     * again, and the file has already printed all three as Subtitle: and
+     * Summary: lines and the post heading. Only the first dozen non-blank
+     * lines are looked at, and only a whole line that matches exactly is
+     * dropped, so a later mention in running prose is never touched.
+     */
+    private function strip_repeated_intro_lines( string $markdown, WP_Post $post ): string {
+        $known = [ html_entity_decode( get_the_title( $post ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ), trim( (string) $post->post_excerpt ) ];
+
+        if ( function_exists( 'get_field' ) ) {
+            foreach ( [ 'page_custom_title', 'page_sub_title', 'blog_post_sub_title' ] as $field ) {
+                $value = get_field( $field, $post->ID );
+
+                if ( is_string( $value ) ) {
+                    $known[] = $value;
+                }
+            }
+        }
+
+        $known = array_filter( array_map( function ( $value ) {
+            return trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) $value ) ) );
+        }, $known ), 'strlen' );
+
+        if ( ! $known ) {
+            return $markdown;
+        }
+
+        $lines = explode( "\n", $markdown );
+        $seen  = 0;
+
+        foreach ( $lines as $i => $line ) {
+            $bare = trim( $line );
+
+            if ( $bare === '' ) {
+                continue;
+            }
+
+            if ( ++$seen > 12 ) {
+                break;
+            }
+
+            // Headings and emphasis count as the same words.
+            $bare = trim( preg_replace( '/^#{1,6}\s+|^\*+|\*+$/', '', $bare ) );
+
+            if ( in_array( $bare, $known, true ) ) {
+                unset( $lines[ $i ] );
+            }
+        }
+
+        $markdown = implode( "\n", $lines );
+
+        return preg_replace( "/\n{3,}/", "\n\n", $markdown );
     }
 
     /**
