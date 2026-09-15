@@ -115,8 +115,14 @@ class SBAIKE_Updates {
 						<button type="submit" class="button"><?php esc_html_e( 'Check for updates', 'socialbump-ai-knowledge-exporter' ); ?></button>
 					</form>
 
-					<?php if ( $pending && current_user_can( 'update_plugins' ) ) : ?>
-						<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( self_admin_url( 'update.php?action=upgrade-plugin&plugin=' . rawurlencode( $file ) ), 'upgrade-plugin_' . $file ) ); ?>"><?php esc_html_e( 'Update now', 'socialbump-ai-knowledge-exporter' ); ?></a>
+					<?php
+					// The bulk path the dashboard uses, which swaps the files under maintenance
+					// mode and never deactivates the plugin. The single plugin path deactivates
+					// first and reactivates silently, and when that silent step fails the plugin
+					// is simply left off with nothing logged. It happened.
+					if ( $pending && current_user_can( 'update_plugins' ) ) :
+						?>
+						<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( self_admin_url( 'update-core.php?action=do-plugin-upgrade&plugins=' . rawurlencode( $file ) ), 'upgrade-core' ) ); ?>"><?php esc_html_e( 'Update now', 'socialbump-ai-knowledge-exporter' ); ?></a>
 					<?php endif; ?>
 
 					<a class="sbaike-updates__link" href="<?php echo esc_url( $repo ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'All releases', 'socialbump-ai-knowledge-exporter' ); ?></a>

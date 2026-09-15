@@ -616,6 +616,14 @@ menus never register and the plugin appears to have vanished until you navigate
 somewhere else. Each plugin now clears the compiled copies of its own files on
 upgrader_process_complete, which settles it.
 
+The Update now button on each Updates page goes through update-core.php, the
+bulk path the dashboard uses: maintenance mode on, files swapped, maintenance
+mode off, plugin never deactivated. It used to go through update.php, the
+single plugin path, which deactivates the plugin first and reactivates it
+silently in the same request. When that silent step failed the plugin was left
+switched off with nothing in any log, which is exactly what happened on a
+client site. Keep the bulk path.
+
 ### What a client site must not carry
 
 The hub is the blueprint new sites are built from, so whatever is in its database
