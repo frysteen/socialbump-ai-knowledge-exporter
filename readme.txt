@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.0.7 =
+* SEO for AI now stands on its own. It has its own item in the admin bar rather than sharing the SocialBUMP one, and it no longer appears on the SocialBUMP Hub page or in its update checks. Nothing about the plugin's own pages or settings has changed.
+* Tidied up the save button script so it no longer shares a name with the one in the other SocialBUMP plugins.
 
 = 1.0.6 =
 * The Update now button on the Updates page now runs the update the same way the WordPress dashboard does, under maintenance mode, instead of deactivating and reactivating the plugin. The old way could leave the plugin switched off after an update.

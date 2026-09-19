@@ -502,63 +502,18 @@ and every cached page intact. Do not rename them. Everything else is sbaike_.
   the old values cached on a site with a persistent object cache, and the
   staleness checks kept reading them.
 
-<!-- shared:start -->
+## House rules for this plugin
 
-## House rules, shared by all three SocialBUMP plugins
+SEO for AI is standalone. It shares no code, no admin bar item, no menu and
+no update stream with SocialBUMP Site Kit or SocialBUMP Bricks Tweaks, and it
+does not appear on the SocialBUMP Hub page. It may copy from them, and has:
+the save button, the banner and the look all began as their code. Copy freely,
+share nothing. A copy that drifts looks slightly wrong. A shared file that
+drifted took two live client sites down, which is why this plugin was pulled
+out of that arrangement.
 
-This block is identical in the docs of all three plugins. Change it in one and
-copy it to the other two in the same session. They all live on the hub, so that
-is a two minute job, and the Publishing page warns you when they have drifted.
-
-### The three plugins
-
-| Plugin | Folder | Prefix | Menu |
-| --- | --- | --- | --- |
-| SocialBUMP Bricks Tweaks | socialbump-bricks-tweaks | SBBT_ / sbbt_ | SB Bricks Tweaks |
-| SocialBUMP Site Kit | socialbump-site-kit | SBSK_ / sbsk_ | SB Site Kit |
-| SocialBUMP SEO for AI | socialbump-ai-knowledge-exporter | SBAIKE_ / sbaike_ | SB SEO for AI |
-
-SEO for AI was called AI Knowledge Exporter until September 2026. Its folder,
-text domain, option names and GitHub repo still say so, deliberately: renaming
-them would break the update checker and the saved settings on every site.
-
-Which plugin does a job belong in? Needs the Bricks theme, Bricks Tweaks.
-Useful on any site, Site Kit. About what AI crawlers read, SEO for AI.
-
-### Files that are identical in each plugin
-
-- includes/class-socialbump-admin-bar.php
-- assets/js/save-state.js
-
-Change one, change all three, then check the md5s match. Both are written so
-that whichever plugin loads first wins and the others stand aside, so a site
-running mixed versions still works.
-
-### The shared admin bar item
-
-SocialBUMP_Admin_Bar::register() takes id, label, href and items, and optionally
-actions, attention, attention_title and current. Everything is drawn once, at
-admin_bar_menu priority 200.
-
-- One plugin active: that plugin sits on the bar on its own.
-- Two or more: a single SocialBUMP item, each plugin a row inside it, its pages
-  on a flyout from that row.
-- Each row has a dot: green when there is nothing to do, amber when there is.
-  Any amber row makes the SocialBUMP dot amber, so the top of the bar is the
-  only thing that needs watching.
-- attention means an update is waiting. SEO for AI also counts stale posts.
-- The current page is white and bold, never the admin colour scheme accent:
-  some accents are unreadable on the dark bar.
-- An action row marked sb-bar-action is-idle looks inactive and ignores hover.
-
-Two signals, and they mean different things. Keep them apart:
-
-- The dot is about this site: content waiting to be rebuilt, an update ready to
-  install. It is what someone looking after the site cares about.
-- Amber wording, and a small count beside it, is about the hub: changes noted but
-  not yet released. Publishing carries it, through attention and count on that
-  item. Never fold this into the dot, and never colour the dot for it: on a client
-  site there is nothing to publish and the distinction is the whole point.
+This block used to be a block of notes identical in all three plugins. It is
+now this plugin's own, so change it here and nowhere else.
 
 ### Getting between the pages
 
@@ -572,41 +527,7 @@ be a scroll away and its pages only show while you are already on one of them.
 - render_nav() builds it from bar_items(), the same list the admin bar uses, so
   a new page appears in the menu, the admin bar and the banner at once.
 - It hides itself when a plugin has fewer than two pages.
-### The SocialBUMP Hub page
 
-class-socialbump-overview.php, identical in each plugin, same arrangement as the
-admin bar: first to load defines the class, the others register with it.
-
-- A top level SocialBUMP Hub menu, but only on the hub and only when more than
-  one plugin is active. It therefore disappears by itself on every site built
-  from the blueprint, which is the point: there is nothing to publish there.
-- A card per plugin: version, whether an update is waiting, how many changes are
-  queued for the next release, and links to its pages. The count is an amber pill
-  that jumps down to that plugin publishing panel.
-- Below that, each plugin publishing panel in turn, with the plugin name slid in
-  as the heading inside the panel, so all of them go out from one screen.
-- The item in the admin bar opens this page when it exists, and the first
-  plugin otherwise.
-- Between the cards and the publishing panels sits a master prompt for starting a
-  chat that could touch more than one plugin. It builds itself from whatever is
-  registered, so a fourth plugin would appear in it without being told, and it
-  covers what the per plugin prompts cannot: that shared code lands everywhere,
-  and that the shared block of the notes must stay identical in every copy.
-
-register() takes id, name, version, file and pages, and optionally notes, css,
-css_time, logo, accent_var, hub, and release, a callback that draws that plugin
-publishing panel.
-
-Two things about the page are easy to get wrong, and both have been:
-
-- It belongs to no plugin in particular, so it loads every registered stylesheet,
-  and each one is versioned by when the file changed rather than by the plugin
-  version. Version it by the plugin and a browser serves yesterday CSS after every
-  edit, which is exactly what happened.
-- Each plugin styles itself from its own CSS variable, and nothing sets those on a
-  page that belongs to none of them, so the page works out the accent itself and
-  sets every registered variable. Without that the panels fall back to the
-  WordPress blue and look nothing like the rest.
 
 ### After an update
 
@@ -619,10 +540,13 @@ upgrader_process_complete, which settles it.
 The Update now button on each Updates page goes through update-core.php, the
 bulk path the dashboard uses: maintenance mode on, files swapped, maintenance
 mode off, plugin never deactivated. It used to go through update.php, the
-single plugin path, which deactivates the plugin first and reactivates it
-silently in the same request. When that silent step failed the plugin was left
-switched off with nothing in any log, which is exactly what happened on a
-client site. Keep the bulk path.
+single plugin path, which deactivates the plugin first and does not reactivate
+it in PHP at all: the results page carries a hidden iframe that loads
+update.php?action=activate-plugin, and that iframe is the reactivation. Leave
+the page before it loads, or have anything block it, and the plugin stays off
+with nothing in any log. That happened twice on a client site. Keep the bulk
+path.
+
 
 ### What a client site must not carry
 
@@ -632,6 +556,8 @@ GitHub token, its queued release notes and its release cache when an admin page
 loads. A token has no business on a client site.
 
 If you add anything else that only the hub should know, delete it there too.
+
+
 ### Unsaved changes, and the save button
 
 Any form marked data-sb-dirty is watched. The save button sits disabled reading
@@ -661,6 +587,7 @@ pale yellow with an amber border, matching the reminder. Both selectors lead wit
 .wp-core-ui and .button, because WordPress styles disabled and primary buttons
 with important and would otherwise win.
 
+
 ### The look
 
 - One stylesheet per plugin at assets/css/admin.css, every class prefixed.
@@ -674,9 +601,10 @@ with important and would otherwise win.
   something missing. The left edge carries the accent when live.
 - Pills: prefix-status__pill, is-good green, is-stale amber. An amber one that
   can be acted on is a link, and clicking it does the thing it describes.
-- Menu icon: the SocialBUMP exclamation, shared by all four items through
-  SocialBUMP_Overview::brand_icon(). Each plugin positions its menu next to the
-  others rather than at a fixed spot.
+- Menu icon: the SocialBUMP exclamation, this plugin's own copy of it, built in
+  SBAIKE_Admin::menu_icon(). It came from the shared class the other two still
+  use, so if the mark ever changes it has to be changed here as well. The menu
+  positions itself next to the other SocialBUMP plugins when they are present.
 - WordPress does not recolour an SVG menu icon. It only recolours Dashicons,
   which are a font. An SVG given as a menu icon becomes a background image and
   keeps whatever colour is baked into it, so ours is white and the dimming when
@@ -689,6 +617,7 @@ with important and would otherwise win.
 - The accent comes from the admin colour scheme, chosen by saturation so a
   washed out swatch is never picked, and exposed as --prefix-accent.
 
+
 ### Releasing
 
 Everything is developed and released on the hub, bricks.socialbump.com.au. Each
@@ -700,7 +629,7 @@ code and shows a Publishing page.
 - One fine grained GitHub token per plugin, stored encrypted, scoped to that one
   repo with Contents read and write. A token cannot create repositories, so a new
   repo is made by hand first.
-- The notes box fills from prefix_log_change() calls made since the last release,
+- The notes box fills from sbaike_log_change() calls made since the last release,
   and the list empties once a release goes out. Call it after any change worth
   telling someone about, in their words rather than yours.
 - Only log what a client site would notice. The Hub page, the Publishing page and
@@ -712,9 +641,13 @@ code and shows a Publishing page.
   the response.
 - The first release may carry the version already in the files. Every release
   after that has to be higher than the last.
+- A version needs all three parts, so 1.1 is padded to 1.1.0 when you leave the
+  field, and again on save in case the form never lost focus. Typing 1.1 used
+  to get you the browser complaining about a pattern it does not explain.
 - Everything in the plugin folder is published except .git, .github, node_modules
   and .DS_Store. These docs ship with the plugin, so they reach every site, and
   the repos are public: nothing private goes in them.
+
 
 ### How work actually gets done here
 
@@ -744,27 +677,18 @@ a regular expression, or a quote in a string, has to survive JSON, then PHP, the
 whatever it is written into. Building strings with chr( 34 ) and concatenation is
 uglier to read but far less likely to arrive mangled.
 
+
 ### Where things live
 
 The hub is bricks.socialbump.com.au, and the plugins are in the usual place:
 wp-content/plugins/<folder>/. Client sites each have their own connector and the
 same folder structure.
 
-Every plugin has the same shape:
+The file by file account of this plugin is under The files, and what each one is
+for, further up these notes. Nothing in includes/ is shared with another plugin
+any more: the two class-socialbump-*.php files that used to sit there are gone,
+and SBAIKE_Admin_Bar replaced the shared bar class.
 
-| File | What it is |
-| --- | --- |
-| <plugin>.php | constants, updater, hub check, log_change(), loads everything |
-| includes/class-<pre>-settings.php or -admin.php | menu, pages, banner, admin bar registration |
-| includes/class-<pre>-modules.php | finds and boots the modules |
-| includes/class-<pre>-release.php | publishing to GitHub, hub only |
-| includes/class-<pre>-updates.php | the Updates page and the update check |
-| includes/class-<pre>-transfer.php | settings export and import |
-| includes/class-<pre>-docs.php | these notes, and the panel on Publishing |
-| includes/class-socialbump-admin-bar.php | shared, identical in all three |
-| assets/css/admin.css | everything the admin pages look like |
-| assets/js/save-state.js | shared, identical in all three |
-| vendor/plugin-update-checker | the updater library, left alone |
 
 ### Working on a plugin from a client site
 
@@ -785,7 +709,7 @@ When you have, bring it home carefully. Assume nothing at any step:
 4. Copy back only the files that genuinely differ, one at a time.
 5. Compare the md5s again afterwards and confirm each one matches.
 6. Update these docs on the hub, never on the client site.
-7. Call prefix_log_change() on the hub, so the work appears in the next release.
+7. Call sbaike_log_change() on the hub, so the work appears in the next release.
 
 If the two sides have both changed the same file, stop and say so rather than
 picking one. Merging by hand with both versions in front of you takes minutes.
@@ -794,6 +718,7 @@ later.
 
 Nothing may live only on a client site. The next update overwrites the plugin
 folder, and anything not carried back to the hub is gone.
+
 
 ### Habits that have paid off
 
@@ -806,6 +731,7 @@ folder, and anything not carried back to the hub is gone.
 - Anchor edits on unique strings. If an anchor matches twice, stop and widen it.
 - After editing a file, the class already loaded in that same request is still
   the old one. Verify in a fresh request, not the one that wrote the file.
+
 
 ### Things learned the hard way
 
@@ -832,5 +758,18 @@ folder, and anything not carried back to the hub is gone.
   window ran half on old code and half on new, and stamped the cache both ways.
   A fresh request is not proof until a minute has passed, and nothing that
   writes stamps or data formats should be exercised in that minute.
+- Three plugins carrying the same shared file means whichever loads first
+  declares the class, and the others must not declare it again. Bricks Tweaks
+  sorts before Site Kit, so when it started loading the cards class at the usual
+  time it declared it first, and an older published Site Kit whose copy had no
+  guard declared it again and killed two live sites. The lesson is not the
+  guard, which was already there: it is that the guard only helps in the copy
+  that has it, and published sites run old copies for months. A plugin that
+  sorts early loads a shared class last, on plugins_loaded at a late priority,
+  so the oldest copy present goes first and there is nothing to clash with.
+  This plugin no longer carries any of those files, which is the permanent fix
+  for it here: there is nothing left to clash with.
+- The error log is the fastest way to the truth and was checked third rather
+  than first during that outage, after two confident wrong explanations. Read
+  the log before forming a theory.
 
-<!-- shared:end -->

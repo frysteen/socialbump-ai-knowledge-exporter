@@ -34,7 +34,6 @@ class SBAIKE_Admin {
 		add_action( 'admin_enqueue_scripts', [ $this, 'styles' ] );
 
 		// The shared overview page, when more than one SocialBUMP plugin is about.
-		add_action( 'admin_menu', [ $this, 'register_overview' ], 5 );
 		add_filter( 'wp_redirect', [ $this, 'return_after_save' ] );
 
 		// Late, so the core has already put its own node in the bar to hang these off.
@@ -205,31 +204,6 @@ class SBAIKE_Admin {
 		return substr( $html, 0, $first ) . $section . substr( $html, $first );
 	}
 
-	/** Tell the shared overview page about this plugin. */
-	public function register_overview() {
-		if ( ! class_exists( 'SocialBUMP_Overview' ) ) {
-			return;
-		}
-
-		SocialBUMP_Overview::register(
-			[
-				'id'      => 'seo-for-ai',
-				'name'    => __( 'SEO for AI', 'socialbump-ai-knowledge-exporter' ),
-				'version' => SBAIKE_VERSION,
-				'file'    => plugin_basename( SBAIKE_FILE ),
-				'pages'   => $this->bar_items(),
-				'notes'   => count( (array) get_option( 'sbaike_pending_changes', [] ) ),
-				'css'      => SBAIKE_URL . 'assets/css/admin.css',
-				'css_time' => file_exists( SBAIKE_PATH . 'assets/css/admin.css' ) ? filemtime( SBAIKE_PATH . 'assets/css/admin.css' ) : 0,
-				'logo'     => SBAIKE_URL . 'assets/img/socialbump-logo-light.svg',
-				'accent_var' => '--sbaike-accent',
-				'hub'     => function_exists( 'sbaike_is_hub' ) && sbaike_is_hub(),
-				'release' => ( function_exists( 'sbaike_is_hub' ) && sbaike_is_hub() && class_exists( 'SBAIKE_Release' ) )
-					? [ SBAIKE_Release::instance(), 'render' ]
-					: null,
-			]
-		);
-	}
 	public function render_main() {
 		$this->render_settings( 'settings' );
 	}
@@ -807,12 +781,15 @@ class SBAIKE_Admin {
 	 * SVG data icons to match the admin menu.
 	 */
 	private function menu_icon() {
-		// The SocialBUMP mark, shared with the other plugins.
-		if ( class_exists( 'SocialBUMP_Overview' ) ) {
-			return SocialBUMP_Overview::brand_icon();
-		}
+		// The SocialBUMP mark. Its own copy, since nothing is shared any more.
+		$q = chr( 34 );
 
-		$svg = '<svg xmlns=' . chr( 34 ) . 'http://www.w3.org/2000/svg' . chr( 34 ) . ' viewBox=' . chr( 34 ) . '0 0 20 20' . chr( 34 ) . '><path fill=' . chr( 34 ) . '#ffffff' . chr( 34 ) . ' d=' . chr( 34 ) . 'M6.5 5h7a5 5 0 0 1 0 10h-7a5 5 0 0 1 0-10zm7 2.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z' . chr( 34 ) . '/></svg>';
+		// Tall and narrow, so it is scaled to the height of the box and centred.
+		$path = 'M10.94,30.2c1.24,1.24,1.86,2.75,1.86,4.54s-.62,3.3-1.86,4.54-2.75,1.86-4.54,1.86-3.3-.62-4.54-1.86-1.86-2.75-1.86-4.54.62-3.3,1.86-4.54,2.75-1.86,4.54-1.86,3.3.62,4.54,1.86ZM1.22,24.27L.13,1.4C.09.64.7,0,1.46,0h9.88c.76,0,1.37.64,1.34,1.4l-1.09,22.87c-.03.71-.62,1.27-1.34,1.27H2.56c-.71,0-1.3-.56-1.34-1.27Z';
+
+		$svg  = '<svg xmlns=' . $q . 'http://www.w3.org/2000/svg' . $q . ' viewBox=' . $q . '0 0 20 20' . $q . '>';
+		$svg .= '<g transform=' . $q . 'translate(7.2 1) scale(0.4376)' . $q . ' fill=' . $q . '#ffffff' . $q . '>';
+		$svg .= '<path d=' . $q . $path . $q . '/></g></svg>';
 
 		return 'data:image/svg+xml;base64,' . base64_encode( $svg );
 	}
@@ -887,7 +864,7 @@ class SBAIKE_Admin {
 		$save = SBAIKE_PATH . 'assets/js/save-state.js';
 
 		if ( file_exists( $save ) ) {
-			wp_enqueue_script( 'sb-save-state', SBAIKE_URL . 'assets/js/save-state.js', [], SBAIKE_VERSION . '.' . filemtime( $save ), true );
+			wp_enqueue_script( 'sbaike-save-state', SBAIKE_URL . 'assets/js/save-state.js', [], SBAIKE_VERSION . '.' . filemtime( $save ), true );
 		}
 	}
 
@@ -983,7 +960,7 @@ class SBAIKE_Admin {
 	 * one SocialBUMP item rather than one per plugin.
 	 */
 	public function admin_bar( $bar ) {
-		if ( ! current_user_can( 'manage_options' ) || ! class_exists( 'SocialBUMP_Admin_Bar' ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ! class_exists( 'SBAIKE_Admin_Bar' ) ) {
 			return;
 		}
 
@@ -999,7 +976,7 @@ class SBAIKE_Admin {
 				if ( substr( $node->id, -7 ) === '-update' ) {
 					$idle = isset( $meta['class'] ) && strpos( $meta['class'], 'socialbump-ab-disabled' ) !== false;
 
-					$meta['class'] = trim( ( isset( $meta['class'] ) ? $meta['class'] . ' ' : '' ) . 'sb-bar-action' . ( $idle ? ' is-idle' : '' ) );
+					$meta['class'] = trim( ( isset( $meta['class'] ) ? $meta['class'] . ' ' : '' ) . 'sbaike-bar-action' . ( $idle ? ' is-idle' : '' ) );
 				}
 
 				$actions[] = [
@@ -1054,7 +1031,7 @@ class SBAIKE_Admin {
 			$why[] = sprintf( __( 'Version %s is available', 'socialbump-ai-knowledge-exporter' ), $pending );
 		}
 
-		SocialBUMP_Admin_Bar::register(
+		SBAIKE_Admin_Bar::register(
 			[
 				'id'              => 'seo-for-ai',
 				'label'           => __( 'SEO for AI', 'socialbump-ai-knowledge-exporter' ),

@@ -205,6 +205,19 @@
 		form.addEventListener( 'input', paint );
 		form.addEventListener( 'change', paint );
 
+		/**
+		 * Saved by something other than the form itself.
+		 *
+		 * A page can save these settings as part of another action, and then the
+		 * form is no longer dirty even though nobody pressed Save. Dispatch
+		 * sb:saved on the form to say so, and the button and the reminder settle
+		 * down as if it had been.
+		 */
+		form.addEventListener( 'sb:saved', function () {
+			saved = snapshot( form );
+			paint();
+		} );
+
 		// Leaving to save should not warn, or flash the reminder on the way out.
 		form.addEventListener( 'submit', function () {
 			saving = true;

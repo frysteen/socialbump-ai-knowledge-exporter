@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * It ships with the plugin, so it reaches every site.
  *
  * Editing happens here on the hub, because this is the copy that gets published.
- * The block shared between the three plugins is compared against the others, so
- * drift is noticed rather than discovered months later.
+ * These notes stand alone, like the plugin: there is nothing to compare them
+ * against and nothing that has to be copied elsewhere when they change.
  */
 class SBAIKE_Docs {
 
@@ -46,35 +46,6 @@ class SBAIKE_Docs {
 		return substr( $text, $start, $end - $start );
 	}
 
-	/** Which of the other plugins say something different. */
-	private static function drifted() {
-		$ours  = self::shared();
-		$other = [
-			'Bricks Tweaks' => 'socialbump-bricks-tweaks',
-			'Site Kit'      => 'socialbump-site-kit',
-			'SEO for AI'    => 'socialbump-ai-knowledge-exporter',
-		];
-		$out = [];
-
-		if ( $ours === '' ) {
-			return $out;
-		}
-
-		foreach ( $other as $name => $folder ) {
-			$file = WP_PLUGIN_DIR . '/' . $folder . '/docs/context.md';
-
-			if ( $file === self::path() || ! is_readable( $file ) ) {
-				continue;
-			}
-
-			if ( self::shared( $file ) !== $ours ) {
-				$out[] = $name;
-			}
-		}
-
-		return $out;
-	}
-
 	public static function save() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'socialbump-ai-knowledge-exporter' ) );
@@ -100,7 +71,6 @@ class SBAIKE_Docs {
 	public static function render() {
 		$file = self::path();
 		$text = is_readable( $file ) ? (string) file_get_contents( $file ) : '';
-		$gone = self::drifted();
 		$q    = chr( 34 );
 
 		echo '<section class=' . $q . 'sbaike-section' . $q . '>';
@@ -112,17 +82,11 @@ class SBAIKE_Docs {
 			echo '<div class=' . $q . 'notice notice-success inline' . $q . '><p>' . esc_html__( 'Notes saved.', 'socialbump-ai-knowledge-exporter' ) . '</p></div>';
 		}
 
-		if ( $gone ) {
-			echo '<div class=' . $q . 'notice notice-warning inline' . $q . '><p>';
-			/* translators: %s: plugin names */
-			echo esc_html( sprintf( __( 'The shared part of these notes no longer matches %s. Copy the block between the shared markers across so all three say the same thing.', 'socialbump-ai-knowledge-exporter' ), implode( ' and ', $gone ) ) );
-			echo '</p></div>';
-		}
-
 		$prompt  = 'You are picking up work on SocialBUMP SEO for AI, a WordPress plugin. ';
 		$prompt .= 'Everything is developed on the hub, bricks.socialbump.com.au, which you reach through its Novamira MCP connector. ';
 		$prompt .= 'Before changing anything, read wp-content/plugins/socialbump-ai-knowledge-exporter/docs/context.md on the hub. ';
-		$prompt .= 'It explains what the plugin does, how it is built, the conventions it shares with the other two SocialBUMP plugins, and the mistakes already made and fixed. ';
+		$prompt .= 'It explains what the plugin does, how it is built, and the mistakes already made and fixed. ';
+		$prompt .= 'This plugin is standalone. It shares no code with the other SocialBUMP plugins, so nothing you change here lands anywhere else, and nothing they change lands here. It may copy from them, never share with them. ';
 		$prompt .= 'Keep that file current: when you change how something works or learn something the hard way, write it there in the same session. ';
 		$prompt .= 'Tell me what you have read before you start. ';
 		$prompt .= 'And before you finish, or any time I say we are done, go back over what we changed and bring that file up to date, then tell me exactly what you added or corrected in it. ';

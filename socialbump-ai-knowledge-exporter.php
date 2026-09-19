@@ -3,7 +3,7 @@
  * Plugin Name: SocialBUMP SEO for AI
  * Plugin URI:  https://socialbump.com.au
  * Description: Generates AI-friendly llms.txt knowledge exports from WordPress content, custom fields and supported page builders.
- * Version:     1.0.6
+ * Version:     1.0.7
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author:      SocialBUMP
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SBAIKE_VERSION', '1.0.6' );
+define( 'SBAIKE_VERSION', '1.0.7' );
 define( 'SBAIKE_FILE', __FILE__ );
 define( 'SBAIKE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SBAIKE_URL', plugin_dir_url( __FILE__ ) );
@@ -218,8 +218,7 @@ function sbaike_load_extensions() {
 }
 sbaike_load_extensions();
 
-require_once SBAIKE_PATH . 'includes/class-socialbump-admin-bar.php';
-require_once SBAIKE_PATH . 'includes/class-socialbump-overview.php';
+require_once SBAIKE_PATH . 'includes/class-sbaike-admin-bar.php';
 require_once SBAIKE_PATH . 'includes/class-sbaike-admin.php';
 require_once SBAIKE_PATH . 'includes/class-sbaike-updates.php';
 require_once SBAIKE_PATH . 'includes/class-sbaike-transfer.php';
