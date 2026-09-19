@@ -1586,7 +1586,7 @@ class SocialBump_AI_Knowledge_Exporter {
                 </div>
             <?php endif; ?>
 
-            <form id="sb-settings-form" data-sb-dirty method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+            <form id="sb-settings-form" autocomplete="off" data-sb-dirty method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="socialbump_save_and_generate">
                 <?php wp_nonce_field( 'socialbump_save_and_generate', 'socialbump_save_and_generate_nonce' ); ?>
 
@@ -4570,7 +4570,7 @@ class SocialBump_AI_Knowledge_Exporter {
             if ( $details_mode ) {
                 // Core contributes the native WP editor (Gutenberg or Classic
                 // Editor) when the post type supports the editor; each builder
-                // addon appends its own via the filter below. The result is one
+                // add-on appends its own via the filter below. The result is one
                 // line listing every editing surface the post type offers,
                 // separate from which template renders it.
                 $page_builders = [];
@@ -4585,9 +4585,9 @@ class SocialBump_AI_Knowledge_Exporter {
                  * Filter: socialbump_aiknowledge_available_page_builders
                  *
                  * Collect the editors / page builders available for a post
-                 * type. Core seeds the native WP editor; builder addons append
-                 * their own (e.g. the Bricks addon adds "Bricks Builder" when
-                 * Bricks is enabled for the post type, the Elementor addon adds
+                 * type. Core seeds the native WP editor; builder add-ons append
+                 * their own (e.g. the Bricks add-on adds "Bricks Builder" when
+                 * Bricks is enabled for the post type, the Elementor add-on adds
                  * "Elementor").
                  *
                  * @param string[] $page_builders Builder names collected so far.
@@ -5895,8 +5895,8 @@ class SocialBump_AI_Knowledge_Exporter {
      * Detect which WP-native editor produced this post's content.
      *
      * Core is builder-agnostic: it only reports the native editors below.
-     * Page builders are handled entirely by their own addons (the Bricks
-     * addon, an Elementor addon, etc.), each of which hooks
+     * Page builders are handled entirely by their own add-ons (the Bricks
+     * add-on, an Elementor add-on, etc.), each of which hooks
      * socialbump_aiknowledge_post_meta_lines to override the
      * "Content Builder:" line when it detects its own content, and to correct
      * the "Not applicable" line to "Empty" when the builder is enabled for an
@@ -5912,7 +5912,7 @@ class SocialBump_AI_Knowledge_Exporter {
      */
     private function get_content_type( WP_Post $post ): string {
         // Native WP editors only. Page builders (Bricks, Elementor, etc.) are
-        // detected by their own addon files, which override this line via the
+        // detected by their own add-on files, which override this line via the
         // socialbump_aiknowledge_post_meta_lines filter. Core stays builder-
         // agnostic.
         $content = trim( (string) $post->post_content );

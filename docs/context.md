@@ -560,7 +560,12 @@ If you add anything else that only the hub should know, delete it there too.
 
 ### Unsaved changes, and the save button
 
-Any form marked data-sb-dirty is watched. The save button sits disabled reading
+Any form marked data-sb-dirty is watched, and every one of them also carries
+autocomplete="off". Without it a browser puts unsaved values back into the
+fields when the page is reloaded past the warning, and it does so after the
+page has parsed: the button flickers while the script and the form disagree
+about the baseline, and worse, the edits sit there on screen under a button
+saying there is nothing to save. Reloading should show what is saved. The save button sits disabled reading
 Nothing to save until something changes, then wakes up with its own wording and
 an amber reminder appears top right and follows you down the page. Put the change
 back the way it was and both go quiet. Leaving with something unsaved warns you.
@@ -582,8 +587,21 @@ Reset to defaults sitting above Save changes, and the reminder used to submit
 whichever came first, so clicking it reset the sizes rather than saving them.
 Worth remembering when adding any second submit to a form.
 
-Styling: .sb-save--clean is a grey outline on transparent, .sb-save--dirty is
-pale yellow with an amber border, matching the reminder. Both selectors lead with
+Styling: .sb-save--clean is a grey outline on transparent, .sb-save--dirty fills
+with the admin colour scheme accent, white text, so the thing to press is the
+only solid button on the page. The accent is taken down a shade with
+color-mix( in srgb, var(--prefix-accent) 76%, #000 ): the SocialBUMP green is
+too bright at full strength and every other scheme reads better slightly
+darker. The flat var() is declared first as a fallback. The reminder stays pale
+yellow: it is a notice, not a button, and the two should not read as the same
+thing.
+
+The button is rendered already wearing sb-save--clean, in the core file's save
+bar, rather than left to the script. The script is enqueued in the footer, so a
+button that starts life as an ordinary live primary one flashes the accent
+colour on every page load before settling to its resting state. The other two
+plugins had exactly that and now pass 'primary sb-save--clean' to
+submit_button(). Both selectors lead with
 .wp-core-ui and .button, because WordPress styles disabled and primary buttons
 with important and would otherwise win.
 
@@ -601,6 +619,13 @@ with important and would otherwise win.
   something missing. The left edge carries the accent when live.
 - Pills: prefix-status__pill, is-good green, is-stale amber. An amber one that
   can be acted on is a link, and clicking it does the thing it describes.
+- Text toggle links: sb-toggle on the link, sb-toggles on a pair's wrapper.
+  Select all and Select none, Collapse all, Expand all, Collapse disabled, the
+  all and none pairs on the Image Cleaner: all the same look, all defined once,
+  so a new one never has to be styled again. The colour is the admin scheme
+  accent taken down to 72 per cent against black, and hover goes to 42, which is
+  a change you can actually see on any scheme. A wrapper sits its pair at the
+  right, where the Modules links have always been.
 - Menu icon: the SocialBUMP exclamation, this plugin's own copy of it, built in
   SBAIKE_Admin::menu_icon(). It came from the shared class the other two still
   use, so if the mark ever changes it has to be changed here as well. The menu

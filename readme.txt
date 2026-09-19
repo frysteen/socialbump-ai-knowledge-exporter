@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.0.8 =
+* The Save changes button now fills with your admin colour scheme once there is something to save, instead of the pale yellow. The unsaved changes reminder stays yellow, since it is a notice rather than a button.
+* Settings forms no longer hold on to unsaved changes when you reload the page past the warning. The page now comes back showing what is actually saved, rather than your unsaved edits sitting there looking saved.
 
 = 1.0.7 =
 * SEO for AI now stands on its own. It has its own item in the admin bar rather than sharing the SocialBUMP one, and it no longer appears on the SocialBUMP Hub page or in its update checks. Nothing about the plugin's own pages or settings has changed.

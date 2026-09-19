@@ -97,7 +97,7 @@ function socialbump_bricks_get_elements( int $post_id ): array {
 
 /**
  * Whether Bricks itself is active on this site. Used to keep every callback
- * dormant when Bricks isn't installed (the addon may still be pasted in).
+ * dormant when Bricks isn't installed (the add-on may still be pasted in).
  */
 function socialbump_bricks_is_active(): bool {
     return defined( 'BRICKS_VERSION' ) || function_exists( 'bricks_is_builder' );

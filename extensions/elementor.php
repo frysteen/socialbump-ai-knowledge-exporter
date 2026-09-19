@@ -11,13 +11,13 @@
  *   - Corrects the "Not applicable" line to "Empty" for editor-less post types
  *     that Elementor is enabled to edit but which have not been built yet.
  *
- * This mirrors the Bricks addon. Core itself is builder-agnostic and carries
+ * This mirrors the Bricks add-on. Core itself is builder-agnostic and carries
  * no Elementor logic; all of it lives here.
  *
  * Not yet implemented (planned for when an Elementor site is connected for
  * testing): mapping Elementor Theme Builder templates (elementor_library
  * posts with display conditions) to the post types and taxonomies they
- * render, the way the Bricks addon surfaces "Template:" / "Archive Template:"
+ * render, the way the Bricks add-on surfaces "Template:" / "Archive Template:"
  * lines in the section headers.
  *
  * Install: paste into a snippet manager (WP CodeBox, Fluent Snippets, etc.)
@@ -64,7 +64,7 @@ add_action( 'plugins_loaded', function () {
 
 /**
  * Whether Elementor itself is active on this site. Used to keep every callback
- * dormant when Elementor isn't installed (the addon may still be pasted in).
+ * dormant when Elementor isn't installed (the add-on may still be pasted in).
  */
 function socialbump_elementor_is_active(): bool {
     return defined( 'ELEMENTOR_VERSION' ) || did_action( 'elementor/loaded' );
@@ -97,7 +97,7 @@ function socialbump_elementor_post_is_elementor_built( WP_Post $post ): bool {
  * (an array of slugs). When the option is absent, Elementor defaults to page
  * and post.
  *
- * Returns false outright when Elementor isn't active, so the addon never
+ * Returns false outright when Elementor isn't active, so the add-on never
  * claims "Elementor" as an available builder on a site that doesn't run it.
  */
 function socialbump_elementor_is_enabled_for_post_type( string $post_type ): bool {
@@ -118,7 +118,7 @@ function socialbump_elementor_is_enabled_for_post_type( string $post_type ): boo
 /* =============================================================================
  * Hook 1: Per-post meta line - declare "Content Builder: Elementor"
  *
- * Mirrors the Bricks addon. Content Builder is architecture metadata, so it is
+ * Mirrors the Bricks add-on. Content Builder is architecture metadata, so it is
  * only emitted in the details file; the public file strips the line entirely.
  * ===========================================================================*/
 
