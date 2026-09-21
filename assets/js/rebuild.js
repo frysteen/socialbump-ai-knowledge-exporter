@@ -314,4 +314,23 @@
 
 		run( link );
 	} );
+
+	/**
+	 * A save that left rendering to do comes back with cfg.autorun set, and
+	 * the job starts itself, the same as pressing Update Files. The flag is
+	 * taken out of the address first, so the reload behind the Close button
+	 * does not start it all over again.
+	 */
+	if ( cfg.autorun ) {
+		var auto = document.createElement( 'a' );
+
+		auto.setAttribute( 'data-sbaike-job', cfg.autorun );
+		auto.setAttribute( 'data-sbaike-title', cfg.autorunTitle || cfg.working );
+
+		if ( window.history && window.history.replaceState ) {
+			window.history.replaceState( null, '', window.location.href.replace( /[?&]sbaike_autorun=[^&#]*/, '' ) );
+		}
+
+		run( auto );
+	}
 }() );

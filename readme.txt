@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.9
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.1.0 =
+* Saving settings no longer freezes the page when the save adds rendering work, such as ticking a new post type: the save returns straight away and the rebuild runs with the usual progress bar.
+* The public llms.txt routes no longer render content on demand when the cache is cold, so a visitor or bot can never trigger a heavy rebuild. They serve what is cached, and the next update fills in anything missing.
 
 = 1.0.9 =
 * Fixed Save changes doing nothing on the settings pages. The button lit up and the unsaved changes reminder appeared, but clicking either did not save anything.

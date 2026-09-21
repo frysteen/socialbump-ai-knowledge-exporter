@@ -110,6 +110,17 @@ Physical writes real files to the WordPress root, for a host where the rewrite
 cannot work. Switching back to virtual deletes them, so a stale file cannot
 shadow the live one.
 
+On a site in coming soon or maintenance mode the holding page answers the
+three routes too, the hub included, so test serving on a live site such as
+thecosmeticstudionoosa.com.au rather than the blueprint.
+
+A route asked for while the store is empty, or physical mode with the file
+missing, serves what the post cache already holds and renders nothing:
+rendering means an HTTP fetch per post, and an anonymous visitor must never be
+able to start hundreds of them. A post not yet cached appears without its body
+until the next Update fills it in and rewrites the store. suppress_render on
+the exporter is the switch, honoured by get_post_markdown_cached().
+
 Tell a caching plugin to leave /llms.txt, /llms-full.txt and /llms-details.txt
 alone, especially in virtual mode, or it will serve yesterday text.
 
@@ -201,18 +212,18 @@ core file prints. Change that markup and check these still work.
 
 | File | Size | What it is |
 | --- | --- | --- |
-| socialbump-ai-knowledge-exporter.php | 8 KB | constants, updater, hub check, sbaike_log_change(), stands the WP CodeBox snippets down, loads everything |
-| includes/class-socialbump-ai-knowledge-exporter.php | 326 KB | the exporter itself, moved from the snippet |
-| includes/class-sbaike-admin.php | 34 KB | menu, the three settings pages, reshaping the exporter own page, admin bar |
+| socialbump-ai-knowledge-exporter.php | 9 KB | constants, updater, hub check, sbaike_log_change(), stands the WP CodeBox snippets down, loads everything |
+| includes/class-socialbump-ai-knowledge-exporter.php | 338 KB | the exporter itself, moved from the snippet |
+| includes/class-sbaike-admin.php | 37 KB | menu, the three settings pages, reshaping the exporter own page, admin bar |
 | includes/class-sbaike-rebuild.php | 10 KB | the batch runner and the report |
-| includes/class-sbaike-release.php | 29 KB | publishing, hub only |
+| includes/class-sbaike-release.php | 30 KB | publishing, hub only |
 | includes/class-sbaike-updates.php | 5 KB | the Updates page |
 | includes/class-sbaike-transfer.php | 5 KB | settings export and import |
 | includes/class-sbaike-docs.php | 6 KB | these notes and the Publishing panel |
-| extensions/rendered-content-renderer.php | 18 KB | fetch, strip, convert to Markdown |
-| extensions/bricks-builder.php | 19 KB | Bricks detection and template relationships, not content |
+| extensions/rendered-content-renderer.php | 20 KB | fetch, strip, convert to Markdown |
+| extensions/bricks-builder.php | 23 KB | Bricks detection and template relationships, not content |
 | extensions/elementor.php | 7 KB | the same for Elementor |
-| assets/js/rebuild.js | 4 KB | the progress bar |
+| assets/js/rebuild.js | 9 KB | the progress bar |
 
 ## What it offers other code
 
@@ -415,12 +426,19 @@ the pills catch up. finish() returns the report in its response;
 SBAIKE_Rebuild::report_body() draws it, and report() still reads the older
 transient path for anything that might set it.
 
-Save changes is not batched: it saves the settings and rewrites the files in one
-request, re-rendering only posts that are actually stale, which with a healthy
-cache is about a second. Update Files used to be that same submit, and with the
-old fingerprint (below) that meant a full re-render hanging the page. It now runs
-the stale scope through the batch runner instead, and does not save settings
-first: the unsaved changes guard sends you to Save.
+Save changes saves the settings, then looks at how much rendering the save
+calls for. Nothing stale: the files are rewritten in the same request, about a
+second on a healthy cache. Anything stale, a newly ticked post type being the
+usual case: the files are first rewritten from what is already cached, with no
+rendering, so they match the new settings at once, and the redirect back to
+the page carries sbaike_autorun=stale, which the page reads and starts the
+stale job through the batch runner with the progress bar, the same as Update
+Files. Saving used to render synchronously inside the save request, which
+froze the page with no progress bar whenever a save added real work. The
+autorun flag is taken back out of the address by the script, so the reload
+behind Close does not run it again. Update Files runs the stale scope through
+the batch runner and does not save settings first: the unsaved changes guard
+sends you to Save.
 
 ## Staleness
 

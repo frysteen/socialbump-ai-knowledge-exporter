@@ -53,6 +53,16 @@ class SocialBump_AI_Knowledge_Exporter {
     private ?array $settings_cache = null;
     private ?array $touched_cache = null;
     private ?string $settings_fingerprint_cache = null;
+
+    /**
+     * When true, a cache miss returns nothing instead of rendering.
+     *
+     * Set while assembling a file for a public request, so an anonymous hit
+     * on a route with a cold cache can never start the expensive renders.
+     * Only the admin actions, the batch runner and the cron may render.
+     */
+    private bool $suppress_render = false;
+
     private array $excluded_lookup_cache = [];
     private array $posts_query_cache = [];
     private array $acf_field_object_cache = [];
@@ -2914,8 +2924,27 @@ class SocialBump_AI_Knowledge_Exporter {
                 set_transient( 'sbaike_rebuild_notice_' . $user_id, [ 'error' => true ], 30 );
             }
         } else {
-            // Update: gather the stale list (for the report) BEFORE
-            // building, then re-render stale only via the cache.
+            // Update: how much rendering does this save call for? Rendering
+            // fetches each post over HTTP, so doing it inside the save is
+            // what used to freeze the page when a save ticked a post type.
+            $stale = $this->get_global_stale_count( true );
+
+            if ( $stale > 0 ) {
+                // Write the files from what is already cached, with no
+                // rendering, so they match the new settings straight away.
+                // The redirect then lands back on the page with a flag, and
+                // the page starts the stale job through the batch runner
+                // with the progress bar, the same as Update Files.
+                $this->suppress_render = true;
+                $this->regenerate_outputs();
+                $this->suppress_render = false;
+
+                wp_safe_redirect( admin_url( 'admin.php?page=sb-ai-knowledge-exporter&sbaike_autorun=stale' ) );
+                exit;
+            }
+
+            // Nothing needs rendering: gather the (empty) list for the
+            // report and write the files in this request as before.
             $rebuilt = $this->get_stale_posts_report();
 
             $ok = $this->regenerate_outputs();
@@ -3990,6 +4019,13 @@ class SocialBump_AI_Knowledge_Exporter {
 
         if ( $cached !== null ) {
             return $cached;
+        }
+
+        // A public route being served with a cold cache: serve what exists
+        // rather than rendering. Rendering means an HTTP fetch per post, and
+        // an anonymous request must never be able to start hundreds of them.
+        if ( $this->suppress_render ) {
+            return '';
         }
 
         return $this->render_and_cache_post_markdown( $post );
@@ -7539,13 +7575,17 @@ class SocialBump_AI_Knowledge_Exporter {
             // Store not populated yet (e.g. never generated since switching) -
             // assemble live this once so the route still returns content.
             if ( $body === '' ) {
+                $this->suppress_render = true;
                 $body = $this->assemble_output( $which );
+                $this->suppress_render = false;
             }
         } else {
             // Physical mode but we still reached WordPress, which means the
             // disk file is missing. Serve a live copy as a fallback rather
             // than 404.
+            $this->suppress_render = true;
             $body = $this->assemble_output( $which );
+            $this->suppress_render = false;
         }
 
         nocache_headers();

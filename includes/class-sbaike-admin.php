@@ -855,6 +855,10 @@ class SBAIKE_Admin {
 						'retry'      => __( 'Nothing was lost. Close this and try again.', 'socialbump-ai-knowledge-exporter' ),
 						'unsaved'    => __( 'Save your changes first. A rebuild reloads the page, which would lose them.', 'socialbump-ai-knowledge-exporter' ),
 						'close'      => __( 'Close', 'socialbump-ai-knowledge-exporter' ),
+						// A save that left rendering to do redirects back with this
+						// flag set, and the stale job starts itself on page load.
+						'autorun'      => ( isset( $_GET['sbaike_autorun'] ) && sanitize_key( wp_unslash( $_GET['sbaike_autorun'] ) ) === 'stale' ) ? 'stale' : '',
+						'autorunTitle' => __( 'Updating', 'socialbump-ai-knowledge-exporter' ),
 					]
 				) . ';',
 				'before'
