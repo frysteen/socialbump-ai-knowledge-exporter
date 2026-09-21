@@ -760,6 +760,13 @@ folder, and anything not carried back to the hub is gone.
 
 ### Things learned the hard way
 
+- **form.requestSubmit() only accepts a real submit button.** Pass it a button
+  with type=button, which is what data-sb-save allows, and the browser throws
+  and nothing is sent, while the button and the reminder both look exactly
+  right. SEO for AI's save button is type=button, so its settings pages
+  silently stopped saving. save-state.js now passes the button only when its
+  type is submit, and otherwise calls requestSubmit() with nothing. Found on
+  21 September 2026.
 - PHP declares top level classes and functions while compiling the file, before
   a line of it runs. A class_exists() guard inside the file that declares the
   class always sees its own class and returns, and the file never finishes. This

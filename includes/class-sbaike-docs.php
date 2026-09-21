@@ -21,6 +21,9 @@ class SBAIKE_Docs {
 
 	public static function boot() {
 		add_action( 'admin_post_sbaike_save_docs', [ __CLASS__, 'save' ] );
+
+		// The Publishing page draws whatever hooks this.
+		add_action( 'sbaike_settings_after', [ __CLASS__, 'render' ] );
 	}
 
 	private static function path() {

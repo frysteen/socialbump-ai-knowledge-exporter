@@ -132,8 +132,16 @@
 			|| live( form.querySelectorAll( 'input[type=submit].button-primary, button[type=submit].button-primary' ) )
 			|| live( form.querySelectorAll( 'input[type=submit], button[type=submit]' ) );
 
-		if ( first && typeof form.requestSubmit === 'function' ) {
-			form.requestSubmit( first );
+		if ( typeof form.requestSubmit === 'function' ) {
+			// requestSubmit only accepts a real submit button as the one that sent
+			// the form. Hand it a button that only looks like one, type=button with
+			// data-sb-save, and the browser throws and nothing is saved, while the
+			// button and the reminder both look exactly as they should.
+			if ( first && first.type === 'submit' ) {
+				form.requestSubmit( first );
+			} else {
+				form.requestSubmit();
+			}
 
 			return;
 		}
