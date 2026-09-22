@@ -281,6 +281,43 @@ class SocialBump_AI_Knowledge_Exporter {
         add_action( 'admin_init', [ $this, 'maybe_restamp_cache' ] );
         add_filter( 'query_vars', [ $this, 'add_query_vars' ] );
         add_action( 'template_redirect', [ $this, 'maybe_serve_virtual_file' ], 1 );
+
+        // Point to the files from robots.txt. Priority 110: after Site Kit's
+        // robots.txt (100) and any SEO plugin's, so the lines are added to
+        // whichever file is served rather than replaced by it.
+        add_filter( 'robots_txt', [ $this, 'robots_txt_lines' ], 110, 2 );
+    }
+
+    /**
+     * Add the llms.txt addresses to robots.txt as comments.
+     *
+     * Only while the files are really being served: virtual mode with
+     * something in the store, or physical mode with the files on disk. Not
+     * on a site that discourages search engines, and not twice if something
+     * else already names llms.txt. Crawlers ignore comments, so this is a
+     * pointer for people and tools reading the file, nothing more.
+     */
+    public function robots_txt_lines( $output, $public ) {
+        if ( (string) $public === '0' || strpos( (string) $output, 'llms.txt' ) !== false ) {
+            return $output;
+        }
+
+        if ( $this->get_serving_mode() === 'physical' ) {
+            $live = in_array( 'llms.txt', $this->physical_files_present(), true );
+        } else {
+            $store = get_option( 'socialbump_ai_virtual_store' );
+            $live  = is_array( $store ) && ! empty( $store['slim'] );
+        }
+
+        if ( ! $live ) {
+            return $output;
+        }
+
+        $lines  = "# AI content guides\n";
+        $lines .= '# ' . home_url( '/llms.txt' ) . "\n";
+        $lines .= '# ' . home_url( '/llms-full.txt' ) . "\n";
+
+        return rtrim( (string) $output ) . "\n\n" . $lines;
     }
 
     /**

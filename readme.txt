@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.1.1 =
+* robots.txt now lists the llms.txt and llms-full.txt addresses as comments while the files are being served, whichever plugin supplies the rest of the file.
 
 = 1.1.0 =
 * Saving settings no longer freezes the page when the save adds rendering work, such as ticking a new post type: the save returns straight away and the rebuild runs with the usual progress bar.

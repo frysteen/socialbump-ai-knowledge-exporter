@@ -121,6 +121,13 @@ able to start hundreds of them. A post not yet cached appears without its body
 until the next Update fills it in and rewrites the store. suppress_render on
 the exporter is the switch, honoured by get_post_markdown_cached().
 
+robots_txt_lines() on robots_txt at priority 110 adds the llms.txt and
+llms-full.txt addresses to robots.txt as comments, after Site Kit's Robots.txt
+(100) or an SEO plugin's, so it works whichever supplies the file. Only while
+the files are served (virtual store has content, or the physical llms.txt
+exists), not on a site discouraging search engines, and not if llms.txt is
+already named. Crawlers ignore comments; it is a pointer for people and tools.
+
 Tell a caching plugin to leave /llms.txt, /llms-full.txt and /llms-details.txt
 alone, especially in virtual mode, or it will serve yesterday text.
 
