@@ -19,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * simply tried again next time. On the hub itself the report is recorded
  * directly rather than sent over HTTP.
  *
+ * Since 1.1.0 it also receives updates pushed from the hub's Installs page,
+ * signed by the hub and checked here before anything is installed.
+ *
  * Loaded from each plugin's main file at the top level rather than on
  * plugins_loaded, so it is already listening when a plugin is activated.
  */
@@ -26,12 +29,16 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 	class SocialBUMP_Reporter {
 
-		const VERSION  = '1.0.2';
+		const VERSION  = '1.1.0';
 		const ENDPOINT = 'https://plugins.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
 		const KEY      = 'sbump-installs-2026-4c8e1f7a93d2';
 		const HUB_HOST = 'plugins.socialbump.com.au';
 		const LAST     = 'socialbump_reporter_last';
 		const CRON     = 'socialbump_reporter_daily';
+		const OWNER    = 'frysteen';
+
+		/** The hub's public signing key: checks updates pushed from the Installs page. */
+		const PUSH_KEY = 'mUnBC/yPLSvJ0EWcrBz5ECjGD8OxJy7GFGHOXPfcaTQ=';
 
 		/** Every SocialBUMP plugin the hub keeps track of, by folder. */
 		const PLUGINS = [
@@ -56,6 +63,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			add_action( 'activated_plugin', [ __CLASS__, 'changed' ] );
 			add_action( 'deactivated_plugin', [ __CLASS__, 'deactivated' ] );
 			add_action( 'upgrader_process_complete', [ __CLASS__, 'forget' ], 30 );
+			add_action( 'rest_api_init', [ __CLASS__, 'routes' ] );
 		}
 
 		public static function schedule() {
@@ -180,6 +188,161 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 					'body'     => wp_json_encode( $payload ),
 				]
 			);
+		}
+
+		/**
+		 * Updates pushed from the hub's Installs page.
+		 *
+		 * The hub signs each instruction with its private key; only the public
+		 * half is here, so nobody else can make one that passes. An instruction
+		 * can do exactly one thing: update one of the plugins above, from that
+		 * plugin's own release file on GitHub, to a newer version. It must be
+		 * addressed to this site, be under ten minutes old, and never have been
+		 * used before. Anything else is refused before a byte is downloaded.
+		 */
+		public static function routes() {
+			register_rest_route(
+				'socialbump/v1',
+				'/update',
+				[
+					'methods'             => 'POST',
+					'callback'            => [ __CLASS__, 'receive' ],
+					'permission_callback' => '__return_true',
+				]
+			);
+		}
+
+		private static function refuse( $message, $code = 400 ) {
+			return new WP_REST_Response( [ 'ok' => false, 'message' => $message ], $code );
+		}
+
+		public static function receive( $request ) {
+			$body = json_decode( (string) $request->get_body(), true );
+			$raw  = is_array( $body ) ? base64_decode( (string) ( $body['payload'] ?? '' ), true ) : false;
+			$sig  = is_array( $body ) ? base64_decode( (string) ( $body['sig'] ?? '' ), true ) : false;
+
+			if ( $raw === false || $sig === false || strlen( $sig ) !== 64 || ! function_exists( 'sodium_crypto_sign_verify_detached' ) ) {
+				return self::refuse( 'Not a valid update instruction.' );
+			}
+
+			try {
+				$signed = sodium_crypto_sign_verify_detached( $sig, $raw, base64_decode( self::PUSH_KEY ) );
+			} catch ( \Throwable $e ) {
+				$signed = false;
+			}
+
+			if ( ! $signed ) {
+				return self::refuse( 'The signature did not match the SocialBUMP hub.', 403 );
+			}
+
+			$job  = json_decode( $raw, true );
+			$host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+			if ( ! is_array( $job ) || ( $job['host'] ?? '' ) !== $host ) {
+				return self::refuse( 'This instruction was meant for another site.', 403 );
+			}
+
+			$expires = (int) ( $job['expires'] ?? 0 );
+
+			if ( $expires < time() || $expires > time() + 600 ) {
+				return self::refuse( 'This instruction has expired.', 403 );
+			}
+
+			$nonce = (string) ( $job['nonce'] ?? '' );
+
+			if ( ! preg_match( '/^[a-f0-9]{32}$/', $nonce ) || get_transient( 'socialbump_push_' . $nonce ) ) {
+				return self::refuse( 'This instruction has already been used.', 403 );
+			}
+
+			set_transient( 'socialbump_push_' . $nonce, 1, 15 * MINUTE_IN_SECONDS );
+
+			$slug    = (string) ( $job['plugin'] ?? '' );
+			$version = (string) ( $job['version'] ?? '' );
+
+			if ( ! in_array( $slug, self::PLUGINS, true ) || ! preg_match( '/^\d+(\.\d+){1,3}$/', $version ) ) {
+				return self::refuse( 'Only SocialBUMP plugins can be updated this way.', 403 );
+			}
+
+			$url = 'https://github.com/' . self::OWNER . '/' . $slug . '/releases/download/v' . $version . '/' . $slug . '.zip';
+
+			if ( ( $job['url'] ?? '' ) !== $url ) {
+				return self::refuse( 'The download was not the plugin\'s own GitHub release.', 403 );
+			}
+
+			$file = $slug . '/' . $slug . '.php';
+
+			if ( ! file_exists( WP_PLUGIN_DIR . '/' . $file ) ) {
+				return self::refuse( 'That plugin is not installed here.', 404 );
+			}
+
+			$current = (string) get_file_data( WP_PLUGIN_DIR . '/' . $file, [ 'v' => 'Version' ] )['v'];
+
+			if ( version_compare( $current, $version, '>=' ) ) {
+				self::send();
+
+				return new WP_REST_Response( [ 'ok' => true, 'version' => $current, 'message' => 'Already up to date.' ], 200 );
+			}
+
+			return new WP_REST_Response( self::install( $slug, $file, $url ), 200 );
+		}
+
+		/** WordPress's own plugin updater, run quietly, with its automatic rollback. */
+		private static function install( $slug, $file, $url ) {
+			@set_time_limit( 300 );
+
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+			if ( get_filesystem_method() !== 'direct' || ! WP_Filesystem() ) {
+				return [ 'ok' => false, 'message' => 'This site asks for FTP details to update plugins, so it cannot be updated from the hub.' ];
+			}
+
+			$skin     = new Automatic_Upgrader_Skin();
+			$upgrader = new Plugin_Upgrader( $skin );
+
+			$upgrader->init();
+			$upgrader->upgrade_strings();
+
+			$result = $upgrader->run(
+				[
+					'package'           => $url,
+					'destination'       => WP_PLUGIN_DIR . '/' . $slug,
+					'clear_destination' => true,
+					'clear_working'     => true,
+					'hook_extra'        => [
+						'plugin'      => $file,
+						'type'        => 'plugin',
+						'action'      => 'update',
+						'temp_backup' => [
+							'slug' => $slug,
+							'src'  => WP_PLUGIN_DIR,
+							'dir'  => 'plugins',
+						],
+					],
+				]
+			);
+
+			wp_clean_plugins_cache( true );
+
+			if ( is_wp_error( $result ) || ! $result ) {
+				$message = is_wp_error( $result ) ? $result->get_error_message() : implode( ' ', array_map( 'wp_strip_all_tags', (array) $skin->get_upgrade_messages() ) );
+
+				return [ 'ok' => false, 'message' => $message !== '' ? $message : 'The update did not complete.' ];
+			}
+
+			if ( function_exists( 'opcache_invalidate' ) ) {
+				foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( WP_PLUGIN_DIR . '/' . $slug, FilesystemIterator::SKIP_DOTS ) ) as $php ) {
+					if ( $php->getExtension() === 'php' ) {
+						@opcache_invalidate( $php->getPathname(), true );
+					}
+				}
+			}
+
+			self::send();
+
+			return [ 'ok' => true, 'version' => (string) get_file_data( WP_PLUGIN_DIR . '/' . $file, [ 'v' => 'Version' ] )['v'] ];
 		}
 	}
 

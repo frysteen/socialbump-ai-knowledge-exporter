@@ -870,3 +870,32 @@ move: a copy of the hub on a new address is not the hub until the code says so, 
 the first admin page load there runs each plugin's tidy-up, deleting the GitHub
 token, the queued release notes and the latest release record. Sites keep
 reporting to the old address until they update to a release naming the new one.
+
+## Pushed updates (reporter 1.1.0)
+
+The Installs page can push a release to a site. SB_Tweaks_Push (hub only) signs
+an instruction with the hub's Ed25519 private key, sb_tweaks_push_secret, stored
+encrypted with wp_salt('auth') like the GitHub tokens (the public half is
+sb_tweaks_push_public). The instruction names the host, the plugin, the version,
+the download URL, an expiry five minutes out and a random 32 character nonce. It
+is posted to the site at ?rest_route=/socialbump/v1/update, which works whatever
+the permalink setting.
+
+Every reporter since 1.1.0 carries the public key (PUSH_KEY) and registers that
+route. receive() refuses anything that is not signed by the hub, not addressed
+to this host, expired or more than ten minutes ahead, already used (nonces kept
+as socialbump_push_<nonce> transients for fifteen minutes), not one of PLUGINS,
+not exactly https://github.com/frysteen/<slug>/releases/download/v<version>/<slug>.zip,
+or not newer than what is installed. It then runs Plugin_Upgrader::run() with
+Automatic_Upgrader_Skin and WordPress's temp_backup rollback, only when the
+filesystem method is direct, clears opcache for the plugin, reports, and replies
+with the new version. The version and URL come from the hub's own copy, so the
+site never asks GitHub's API, which is what the 60 an hour limit applies to;
+release file downloads are not limited that way.
+
+The hub records each site's reporter version and only shows Update buttons on
+sites at 1.1.0 or later (SB_Tweaks_Push::NEEDS). Update all pushes one plugin at
+a time. Tested September 2026: every refusal case, then a real push of Site Kit
+1.1.20 to bricks.socialbump.com.au in 8.3 seconds with settings and activation
+kept. A site whose security plugin blocks outside REST requests answers with an
+error the button shows as is.
