@@ -830,3 +830,25 @@ folder, and anything not carried back to the hub is gone.
   than first during that outage, after two confident wrong explanations. Read
   the log before forming a theory.
 
+## Hub reporter
+
+includes/class-socialbump-reporter.php is shared by every SocialBUMP plugin (Site
+Kit, Bricks Tweaks, SEO for AI, SocialBUMP Tweaks): the same file in each, kept
+identical like the shared admin bar, and guarded by class_exists so whichever
+loads first runs. It is required from the plugin's main file at the top level,
+not on plugins_loaded, so it is already listening when a plugin is activated.
+
+It reports every tracked plugin on the site at once, active or not, since a
+deactivated plugin cannot speak for itself: site URL and name, each plugin's
+version and active state, WordPress and PHP versions. Nothing else. It posts to
+https://bricks.socialbump.com.au/wp-json/sb-tweaks/v1/checkin with the shared
+X-SB-Key header, non-blocking with a 3 second timeout, so it never slows a page.
+It sends on activated_plugin and deactivated_plugin for one of ours, on an admin
+page load when the plugin list changed or a day has passed (option
+socialbump_reporter_last holds the time and a hash), and from the daily cron
+event socialbump_reporter_daily for sites nobody logs into. upgrader_process_
+complete clears the last report so the next admin load sends the new version.
+On the hub it calls sb_tweaks_installs_record() directly instead of over HTTP.
+
+To track another plugin, add its folder to SocialBUMP_Reporter::PLUGINS in every
+copy and a label to SB_Tweaks_Installs::LABELS, and bump the reporter VERSION.
