@@ -22,7 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Since 1.1.0 it also receives updates pushed from the hub's Installs page,
  * signed by the hub and checked here before anything is installed. Since 1.2.0
  * the hub can also install SocialBUMP Tweaks, and only that, to move a site's
- * standalone plugins into its modules.
+ * standalone plugins into its modules. Since 1.2.1 a report waits for the hub
+ * to confirm it, and the answer to a push carries the site's report, so the hub
+ * never relies on a separate report arriving while it waits on the site.
  *
  * Loaded from each plugin's main file at the top level rather than on
  * plugins_loaded, so it is already listening when a plugin is activated.
@@ -31,11 +33,14 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 	class SocialBUMP_Reporter {
 
-		const VERSION  = '1.2.0';
+		const VERSION  = '1.2.1';
 		const ENDPOINT = 'https://plugins.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
 		const KEY      = 'sbump-installs-2026-4c8e1f7a93d2';
 		const HUB_HOST = 'plugins.socialbump.com.au';
 		const LAST     = 'socialbump_reporter_last';
+
+		/** Set for a while after a report did not get through, so it is not retried on every page. */
+		const RETRY    = 'socialbump_reporter_retry';
 		const CRON     = 'socialbump_reporter_daily';
 		const OWNER    = 'frysteen';
 
@@ -110,7 +115,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 				'name'     => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
 				'wp'       => (string) $wp_version,
 				'php'      => PHP_VERSION,
-				'reporter' => self::VERSION,
+				'reporter' => self::running_version(),
 				'plugins'  => self::plugins(),
 			];
 		}
@@ -118,6 +123,12 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 		/** Send when anything changed, or once a day. Admin page loads only. */
 		public static function maybe_send() {
 			if ( wp_doing_ajax() || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+				return;
+			}
+
+			// A report that did not get through is tried again, but not on every
+			// page load while the hub is unreachable.
+			if ( get_transient( self::RETRY ) ) {
 				return;
 			}
 
@@ -172,27 +183,100 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			}
 
 
-			update_option( self::LAST, [ 'time' => time(), 'hash' => md5( wp_json_encode( $payload['plugins'] ) ) ], false );
-
 			// The hub records its own report without a trip over HTTP.
 			if ( strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) === self::HUB_HOST && function_exists( 'sb_tweaks_installs_record' ) ) {
 				sb_tweaks_installs_record( $payload );
+				self::sent( $payload );
 
-				return;
+				return true;
 			}
 
-			wp_remote_post(
+			/**
+			 * Waits for the hub's answer. Sent without waiting, reports went
+			 * missing: on some hosts the connection is dropped before an HTTPS
+			 * request is fully out, and the site never knew. Only a report the
+			 * hub has confirmed counts as sent, so one that did not arrive goes
+			 * again on a later admin page load (after RETRY expires).
+			 */
+			$response = wp_remote_post(
 				self::ENDPOINT,
 				[
-					'timeout'  => 3,
-					'blocking' => false,
-					'headers'  => [
+					'timeout' => 8,
+					'headers' => [
 						'Content-Type' => 'application/json',
 						'X-SB-Key'     => self::KEY,
 					],
-					'body'     => wp_json_encode( $payload ),
+					'body'    => wp_json_encode( $payload ),
 				]
 			);
+
+			$answer = is_wp_error( $response ) ? null : json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+			if ( (int) wp_remote_retrieve_response_code( $response ) === 200 && is_array( $answer ) && ! empty( $answer['ok'] ) ) {
+				self::sent( $payload );
+
+				return true;
+			}
+
+			set_transient( self::RETRY, 1, 15 * MINUTE_IN_SECONDS );
+
+			return false;
+		}
+
+		/** Note a report as delivered, so nothing is sent again until something changes. */
+		private static function sent( array $payload ) {
+			update_option( self::LAST, [ 'time' => time(), 'hash' => md5( wp_json_encode( $payload['plugins'] ) ) ], false );
+			delete_transient( self::RETRY );
+		}
+
+		/**
+		 * The reporter version this site runs from the next request on.
+		 *
+		 * WordPress loads the active plugins in order and the first copy of
+		 * this file to load is the one that runs, so that copy's version is
+		 * read from disk. Straight after an update the copy in memory can be
+		 * older than the one now on disk, and the hub needs the new one.
+		 */
+		private static function running_version() {
+			foreach ( (array) get_option( 'active_plugins', [] ) as $basename ) {
+				$file = WP_PLUGIN_DIR . '/' . dirname( (string) $basename ) . '/includes/class-socialbump-reporter.php';
+
+				if ( in_array( dirname( (string) $basename ), self::PLUGINS, true ) && is_readable( $file ) && preg_match( "/const VERSION\s*=\s*'([0-9.]+)'/", (string) file_get_contents( $file ), $m ) ) {
+					return $m[1];
+				}
+			}
+
+			return self::VERSION;
+		}
+
+		/**
+		 * This site's report, handed back in the answer to a push.
+		 *
+		 * During a push the hub is waiting on this site, so a separate report
+		 * sent now would queue behind that wait and could be lost. It goes back
+		 * with the answer instead and the hub records it from there.
+		 */
+		private static function report() {
+			if ( function_exists( 'wp_clean_plugins_cache' ) ) {
+				wp_clean_plugins_cache( true );
+			}
+
+			wp_cache_delete( 'alloptions', 'options' );
+			wp_cache_delete( 'active_plugins', 'options' );
+
+			$payload = self::payload();
+			self::sent( $payload );
+
+			return $payload;
+		}
+
+		/** A push result, with the site's report added when it worked. */
+		private static function with_report( array $result ) {
+			if ( ! empty( $result['ok'] ) ) {
+				$result['report'] = self::report();
+			}
+
+			return $result;
 		}
 
 		/**
@@ -284,7 +368,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 					return self::refuse( 'Only SocialBUMP Tweaks can be installed this way.', 403 );
 				}
 
-				return new WP_REST_Response( self::install_new( $slug, $file, $url ), 200 );
+				return new WP_REST_Response( self::with_report( self::install_new( $slug, $file, $url ) ), 200 );
 			}
 
 			if ( $action !== 'update' ) {
@@ -298,12 +382,10 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			$current = (string) get_file_data( WP_PLUGIN_DIR . '/' . $file, [ 'v' => 'Version' ] )['v'];
 
 			if ( version_compare( $current, $version, '>=' ) ) {
-				self::send();
-
-				return new WP_REST_Response( [ 'ok' => true, 'version' => $current, 'message' => 'Already up to date.' ], 200 );
+				return new WP_REST_Response( [ 'ok' => true, 'version' => $current, 'message' => 'Already up to date.', 'report' => self::report() ], 200 );
 			}
 
-			return new WP_REST_Response( self::install( $slug, $file, $url ), 200 );
+			return new WP_REST_Response( self::with_report( self::install( $slug, $file, $url ) ), 200 );
 		}
 
 		/**
@@ -353,8 +435,6 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 			wp_cache_delete( 'alloptions', 'options' );
 			wp_cache_delete( 'active_plugins', 'options' );
-
-			self::send();
 
 			$active  = (array) get_option( 'active_plugins', [] );
 			$retired = [];
@@ -421,8 +501,6 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 					}
 				}
 			}
-
-			self::send();
 
 			return [ 'ok' => true, 'version' => (string) get_file_data( WP_PLUGIN_DIR . '/' . $file, [ 'v' => 'Version' ] )['v'] ];
 		}

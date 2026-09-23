@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.1.7 =
+* Reports to the hub are more reliable: a check-in now waits for the hub to confirm it (a lost one is tried again later, rather than a day later), and after an update pushed from the hub the site sends its new state back in its answer, so the Installs page is right straight away.
 
 = 1.1.6 =
 * Can now be moved into SocialBUMP Tweaks from the hub's Installs page: the hub can tell a site to install SocialBUMP Tweaks, which then takes over from the standalone plugins it has modules for, keeping their settings. It can install that plugin only, only from its own GitHub release, and only when signed by the hub.
