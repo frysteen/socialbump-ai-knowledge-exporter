@@ -899,3 +899,13 @@ a time. Tested September 2026: every refusal case, then a real push of Site Kit
 1.1.20 to bricks.socialbump.com.au in 8.3 seconds with settings and activation
 kept. A site whose security plugin blocks outside REST requests answers with an
 error the button shows as is.
+
+Reporter 1.2.0: a signed instruction can also say action install, for
+SocialBUMP Tweaks only (INSTALLABLE), from its own GitHub release. install_new()
+installs it with Plugin_Upgrader::install() if it is missing, switches it on,
+then posts once to admin-ajax.php (never page cached) so SocialBUMP Tweaks runs
+and switches off the standalone plugins it has modules for, reports, and
+answers with the version and which tracked plugins are now off. Any other
+action is refused. The hub offers it (SB_Tweaks_Push::can_install, reporter
+1.2.0 or later) as an Install button in the Tweaks column, only on a site
+with a plugin some module's replaces names.

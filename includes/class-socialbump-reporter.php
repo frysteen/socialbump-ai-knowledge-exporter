@@ -20,7 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * directly rather than sent over HTTP.
  *
  * Since 1.1.0 it also receives updates pushed from the hub's Installs page,
- * signed by the hub and checked here before anything is installed.
+ * signed by the hub and checked here before anything is installed. Since 1.2.0
+ * the hub can also install SocialBUMP Tweaks, and only that, to move a site's
+ * standalone plugins into its modules.
  *
  * Loaded from each plugin's main file at the top level rather than on
  * plugins_loaded, so it is already listening when a plugin is activated.
@@ -29,7 +31,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 	class SocialBUMP_Reporter {
 
-		const VERSION  = '1.1.0';
+		const VERSION  = '1.2.0';
 		const ENDPOINT = 'https://plugins.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
 		const KEY      = 'sbump-installs-2026-4c8e1f7a93d2';
 		const HUB_HOST = 'plugins.socialbump.com.au';
@@ -39,6 +41,9 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 		/** The hub's public signing key: checks updates pushed from the Installs page. */
 		const PUSH_KEY = 'mUnBC/yPLSvJ0EWcrBz5ECjGD8OxJy7GFGHOXPfcaTQ=';
+
+		/** The only plugin the hub may install on a site: the one that replaces the rest. */
+		const INSTALLABLE = [ 'socialbump-tweaks' ];
 
 		/** Every SocialBUMP plugin the hub keeps track of, by folder. */
 		const PLUGINS = [
@@ -269,7 +274,22 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 				return self::refuse( 'The download was not the plugin\'s own GitHub release.', 403 );
 			}
 
-			$file = $slug . '/' . $slug . '.php';
+			$file   = $slug . '/' . $slug . '.php';
+			$action = (string) ( $job['action'] ?? 'update' );
+
+			// Since 1.2.0: install SocialBUMP Tweaks, which then takes over from the
+			// standalone plugins it has modules for. Nothing else can be installed.
+			if ( $action === 'install' ) {
+				if ( ! in_array( $slug, self::INSTALLABLE, true ) ) {
+					return self::refuse( 'Only SocialBUMP Tweaks can be installed this way.', 403 );
+				}
+
+				return new WP_REST_Response( self::install_new( $slug, $file, $url ), 200 );
+			}
+
+			if ( $action !== 'update' ) {
+				return self::refuse( 'Not an instruction this site understands.', 403 );
+			}
 
 			if ( ! file_exists( WP_PLUGIN_DIR . '/' . $file ) ) {
 				return self::refuse( 'That plugin is not installed here.', 404 );
@@ -284,6 +304,68 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			}
 
 			return new WP_REST_Response( self::install( $slug, $file, $url ), 200 );
+		}
+
+		/**
+		 * Install SocialBUMP Tweaks from its GitHub release and switch it on.
+		 *
+		 * Then one request with it running, to admin-ajax.php so no page cache
+		 * can answer instead, lets it switch off the standalone plugins it has
+		 * modules for, as it does on any page load. Its modules pick up the
+		 * settings those plugins saved, so nothing else needs doing. Already
+		 * installed but switched off: it is simply switched on.
+		 */
+		private static function install_new( $slug, $file, $url ) {
+			@set_time_limit( 300 );
+
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+			if ( ! file_exists( WP_PLUGIN_DIR . '/' . $file ) ) {
+				if ( get_filesystem_method() !== 'direct' || ! WP_Filesystem() ) {
+					return [ 'ok' => false, 'message' => 'This site asks for FTP details to install plugins, so it cannot be done from the hub.' ];
+				}
+
+				$skin     = new Automatic_Upgrader_Skin();
+				$upgrader = new Plugin_Upgrader( $skin );
+				$result   = $upgrader->install( $url );
+
+				wp_clean_plugins_cache( true );
+
+				if ( is_wp_error( $result ) || ! $result || ! file_exists( WP_PLUGIN_DIR . '/' . $file ) ) {
+					$message = is_wp_error( $result ) ? $result->get_error_message() : implode( ' ', array_map( 'wp_strip_all_tags', (array) $skin->get_upgrade_messages() ) );
+
+					return [ 'ok' => false, 'message' => $message !== '' ? $message : 'The install did not complete.' ];
+				}
+			}
+
+			if ( ! is_plugin_active( $file ) ) {
+				$activated = activate_plugin( $file );
+
+				if ( is_wp_error( $activated ) ) {
+					return [ 'ok' => false, 'message' => 'Installed, but it could not be switched on: ' . $activated->get_error_message() ];
+				}
+			}
+
+			wp_remote_post( admin_url( 'admin-ajax.php' ), [ 'timeout' => 30, 'sslverify' => false, 'body' => [ 'action' => 'sb_tweaks_handover' ] ] );
+
+			wp_cache_delete( 'alloptions', 'options' );
+			wp_cache_delete( 'active_plugins', 'options' );
+
+			self::send();
+
+			$active  = (array) get_option( 'active_plugins', [] );
+			$retired = [];
+
+			foreach ( self::PLUGINS as $other ) {
+				if ( $other !== $slug && file_exists( WP_PLUGIN_DIR . '/' . $other . '/' . $other . '.php' ) && ! in_array( $other . '/' . $other . '.php', $active, true ) ) {
+					$retired[] = $other;
+				}
+			}
+
+			return [ 'ok' => true, 'version' => (string) get_file_data( WP_PLUGIN_DIR . '/' . $file, [ 'v' => 'Version' ] )['v'], 'retired' => $retired ];
 		}
 
 		/** WordPress's own plugin updater, run quietly, with its automatic rollback. */
