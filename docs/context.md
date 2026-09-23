@@ -852,3 +852,8 @@ On the hub it calls sb_tweaks_installs_record() directly instead of over HTTP.
 
 To track another plugin, add its folder to SocialBUMP_Reporter::PLUGINS in every
 copy and a label to SB_Tweaks_Installs::LABELS, and bump the reporter VERSION.
+
+Reporter 1.0.1: WordPress fires deactivated_plugin before it saves the new
+active_plugins list, so reading the list then still showed the plugin as active.
+deactivated() sends with that plugin forced inactive (send() takes an override).
+activated_plugin fires after the save, so activation needs no such help.

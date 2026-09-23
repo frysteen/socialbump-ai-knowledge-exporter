@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.1.3 =
+* Deactivating a SocialBUMP plugin now reports it to the hub as deactivated. WordPress announces a deactivation before saving it, so the report used to still say active.
 
 = 1.1.2 =
 * Reports to the SocialBUMP hub which SocialBUMP plugins this site has, their versions and whether each is active, whenever one changes and once a day, so the hub can show what is installed where. Only the site address and name, those plugin versions, and the WordPress and PHP versions are sent.

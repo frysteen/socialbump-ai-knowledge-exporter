@@ -26,7 +26,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 	class SocialBUMP_Reporter {
 
-		const VERSION  = '1.0.0';
+		const VERSION  = '1.0.1';
 		const ENDPOINT = 'https://bricks.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
 		const KEY      = 'sbump-installs-2026-4c8e1f7a93d2';
 		const HUB_HOST = 'bricks.socialbump.com.au';
@@ -54,7 +54,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			add_action( self::CRON, [ __CLASS__, 'send' ] );
 			add_action( 'admin_init', [ __CLASS__, 'maybe_send' ] );
 			add_action( 'activated_plugin', [ __CLASS__, 'changed' ] );
-			add_action( 'deactivated_plugin', [ __CLASS__, 'changed' ] );
+			add_action( 'deactivated_plugin', [ __CLASS__, 'deactivated' ] );
 			add_action( 'upgrader_process_complete', [ __CLASS__, 'forget' ], 30 );
 		}
 
@@ -125,13 +125,39 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			}
 		}
 
+		/**
+		 * One of ours was switched off: report it as off.
+		 *
+		 * WordPress fires deactivated_plugin before it saves the new list of
+		 * active plugins, so reading that list here still shows the plugin as
+		 * active. The plugin being switched off is marked inactive by hand.
+		 */
+		public static function deactivated( $plugin ) {
+			$slug = dirname( (string) $plugin );
+
+			if ( in_array( $slug, self::PLUGINS, true ) ) {
+				self::send( [ $slug => false ] );
+			}
+		}
+
 		/** After an update, the next admin page load reports the new version. */
 		public static function forget() {
 			delete_option( self::LAST );
 		}
 
-		public static function send() {
+		/**
+		 * Report now. $active overrides a plugin's active state, for the moment
+		 * WordPress has switched one off but not yet saved it.
+		 */
+		public static function send( $active = [] ) {
 			$payload = self::payload();
+
+			foreach ( (array) $active as $slug => $state ) {
+				if ( isset( $payload['plugins'][ $slug ] ) ) {
+					$payload['plugins'][ $slug ]['active'] = (bool) $state;
+				}
+			}
+
 
 			update_option( self::LAST, [ 'time' => time(), 'hash' => md5( wp_json_encode( $payload['plugins'] ) ) ], false );
 
