@@ -670,7 +670,7 @@ with important and would otherwise win.
 
 ### Releasing
 
-Everything is developed and released on the hub, bricks.socialbump.com.au. Each
+Everything is developed and released on the hub, plugins.socialbump.com.au. Each
 plugin decides it is on the hub by host name, and only then loads its release
 code and shows a Publishing page.
 
@@ -730,7 +730,7 @@ uglier to read but far less likely to arrive mangled.
 
 ### Where things live
 
-The hub is bricks.socialbump.com.au, and the plugins are in the usual place:
+The hub is plugins.socialbump.com.au, and the plugins are in the usual place:
 wp-content/plugins/<folder>/. Client sites each have their own connector and the
 same folder structure.
 
@@ -841,7 +841,7 @@ not on plugins_loaded, so it is already listening when a plugin is activated.
 It reports every tracked plugin on the site at once, active or not, since a
 deactivated plugin cannot speak for itself: site URL and name, each plugin's
 version and active state, WordPress and PHP versions. Nothing else. It posts to
-https://bricks.socialbump.com.au/wp-json/sb-tweaks/v1/checkin with the shared
+https://plugins.socialbump.com.au/wp-json/sb-tweaks/v1/checkin with the shared
 X-SB-Key header, non-blocking with a 3 second timeout, so it never slows a page.
 It sends on activated_plugin and deactivated_plugin for one of ours, on an admin
 page load when the plugin list changed or a day has passed (option
@@ -857,3 +857,16 @@ Reporter 1.0.1: WordPress fires deactivated_plugin before it saves the new
 active_plugins list, so reading the list then still showed the plugin as active.
 deactivated() sends with that plugin forced inactive (send() takes an override).
 activated_plugin fires after the save, so activation needs no such help.
+
+## Hub moved (September 2026)
+
+The hub moved from bricks.socialbump.com.au to plugins.socialbump.com.au, so the
+Bricks blueprint can stay clean for starting new sites. The site was copied with
+Duplicator, which kept the WordPress security keys, so the encrypted GitHub tokens
+were copied across as they were. Every hub address in the plugins (the *_HUB_HOST
+constants, SocialBUMP_Reporter::ENDPOINT and HUB_HOST, reporter 1.0.2, the docs and
+the AI prompts) now names plugins.socialbump.com.au. Watch for this on any future
+move: a copy of the hub on a new address is not the hub until the code says so, and
+the first admin page load there runs each plugin's tidy-up, deleting the GitHub
+token, the queued release notes and the latest release record. Sites keep
+reporting to the old address until they update to a release naming the new one.

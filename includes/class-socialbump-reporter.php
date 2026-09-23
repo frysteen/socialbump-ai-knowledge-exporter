@@ -26,10 +26,10 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 	class SocialBUMP_Reporter {
 
-		const VERSION  = '1.0.1';
-		const ENDPOINT = 'https://bricks.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
+		const VERSION  = '1.0.2';
+		const ENDPOINT = 'https://plugins.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
 		const KEY      = 'sbump-installs-2026-4c8e1f7a93d2';
-		const HUB_HOST = 'bricks.socialbump.com.au';
+		const HUB_HOST = 'plugins.socialbump.com.au';
 		const LAST     = 'socialbump_reporter_last';
 		const CRON     = 'socialbump_reporter_daily';
 
