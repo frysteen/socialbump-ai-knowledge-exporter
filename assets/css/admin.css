@@ -1562,6 +1562,62 @@ a.sbaike-status__pill.is-stale:focus {
 	white-space: nowrap;
 }
 
+/*
+ * busy(): one step with no telling how long it will take, such as Publish
+ * release, so a spinner turns in place of the bar.
+ */
+.sbaike-job__spin {
+	display: none;
+}
+
+.sbaike-job.is-busy .sbaike-job__track {
+	display: none;
+}
+
+.sbaike-job.is-busy .sbaike-job__spin {
+	display: block;
+	box-sizing: border-box;
+	width: 34px;
+	height: 34px;
+	margin: 4px auto 0;
+	border: 3px solid #f0f0f1;
+	border-top-color: var(--sbaike-accent, #2271b1);
+	border-radius: 50%;
+	animation: sbaike-job-spin 0.8s linear infinite;
+}
+
+@keyframes sbaike-job-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* The progress popup's report (progress.js): a bold summary, one line per item. */
+.sbaike-job__summary {
+	margin: 0 0 6px;
+	color: #646970;
+	font-size: 13px;
+}
+
+.sbaike-job__summary strong {
+	color: #1d2327;
+}
+
+.sbaike-job__list {
+	margin: 0;
+	list-style: none;
+	font-size: 13px;
+}
+
+.sbaike-job__list li {
+	margin: 0 0 4px;
+	line-height: 1.5;
+}
+
+.sbaike-job__list li.is-failed {
+	color: #b32d2e;
+}
+
 /* What the last rebuild did. */
 .sbaike-report {
 	margin: 20px 0 0;
@@ -1784,4 +1840,112 @@ a.sb-toggle:focus {
 	margin: 0 0 10px;
 	font-size: 12px;
 	color: #c3c4c7;
+}
+
+/*
+ * The confirm popup (assets/js/confirm.js, SBAIKEConfirm): a copy of
+ * SocialBUMP Tweaks' confirm popup, the same box as the progress popup.
+ */
+.sbaike-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(29, 35, 39, 0.6);
+}
+
+.sbaike-dialog {
+	position: relative;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 600px;
+	max-height: 80vh;
+	overflow: auto;
+	padding: 24px;
+	background: #fff;
+	border-radius: 10px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+.sbaike-dialog h2 {
+	margin: 0 30px 12px 0;
+	font-size: 16px;
+}
+
+.sbaike-dialog__message {
+	margin: 0 0 18px;
+	font-size: 13px;
+	line-height: 1.5;
+	white-space: pre-line;
+}
+
+.sbaike-dialog__check {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 0 0 18px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.sbaike-dialog__check input {
+	margin: 2px 0 0;
+}
+
+.sbaike-dialog__list {
+	margin: 6px 0 0 18px;
+	list-style: disc;
+}
+
+.sbaike-dialog__list li {
+	margin: 0 0 2px;
+}
+
+.sbaike-dialog__buttons {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin: 0;
+}
+
+/* A popup with only OK keeps it on the right. */
+.sbaike-dialog__buttons > :only-child {
+	margin-left: auto;
+}
+
+.wp-core-ui .sbaike-modal .sbaike-dialog .button {
+	min-height: 28px;
+	height: auto;
+	padding: 0 12px;
+	font-size: 13px;
+	line-height: 26px;
+}
+
+.wp-core-ui .sbaike-dialog__x {
+	position: absolute;
+	top: 12px;
+	right: 14px;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #646970;
+	font-size: 22px;
+	line-height: 28px;
+	cursor: pointer;
+}
+
+.wp-core-ui .sbaike-dialog__x:hover,
+.wp-core-ui .sbaike-dialog__x:focus {
+	color: #1d2327;
+}
+
+/* A summary in the popup uses the progress popup's report card. */
+.sbaike-dialog .sbaike-job__report {
+	margin: 0 0 18px;
 }

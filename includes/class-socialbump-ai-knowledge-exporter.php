@@ -2728,11 +2728,10 @@ class SocialBump_AI_Knowledge_Exporter {
                         $files_list = implode( ', ', $existing_files );
                         ?>
                         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-                              style="display:inline;margin:0;"
-                              onsubmit="return confirm('Delete <?php echo esc_js( $files_list ); ?>? You can always regenerate them above.');">
+                              style="display:inline;margin:0;">
                             <input type="hidden" name="action" value="socialbump_delete_files">
                             <?php wp_nonce_field( 'socialbump_delete_files', 'socialbump_delete_files_nonce' ); ?>
-                            <button type="submit" class="button button-secondary" style="color:#b32d2e;border-color:#b32d2e;">
+                            <button type="submit" class="button button-secondary" style="color:#b32d2e;border-color:#b32d2e;" data-sbaike-confirm="<?php echo esc_attr( sprintf( 'Delete %s? You can always regenerate them above.', $files_list ) ); ?>" data-sbaike-confirm-title="Delete files" data-sbaike-confirm-action="Delete">
                                 <?php
                                 if ( $file_count === 1 ) {
                                     echo 'Delete ' . esc_html( $existing_files[0] );
@@ -2747,11 +2746,10 @@ class SocialBump_AI_Knowledge_Exporter {
                     <?php endif; ?>
 
                     <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-                          style="display:inline;margin:0;"
-                          onsubmit="return confirm('RESET EVERYTHING?\n\nThis will:\n• Delete all saved settings (post types, taxonomies, ACF picks, custom titles, business info, ordering)\n• Delete llms.txt, llms-full.txt and llms-details.txt if present\n\nThis cannot be undone. You will start fresh.\n\nProceed?');">
+                          style="display:inline;margin:0;">
                         <input type="hidden" name="action" value="socialbump_reset_all">
                         <?php wp_nonce_field( 'socialbump_reset_all', 'socialbump_reset_all_nonce' ); ?>
-                        <button type="submit" class="button button-secondary" style="color:#fff;background:#b32d2e;border-color:#b32d2e;">
+                        <button type="submit" class="button button-secondary" style="color:#fff;background:#b32d2e;border-color:#b32d2e;" data-sbaike-confirm="<?php echo esc_attr( "This deletes every saved setting (post types, taxonomies, ACF picks, custom titles, business info, ordering) and llms.txt, llms-full.txt and llms-details.txt if they are there.\n\nIt cannot be undone. You will start fresh." ); ?>" data-sbaike-confirm-title="Reset everything" data-sbaike-confirm-action="Reset everything">
                             Reset Everything
                         </button>
                     </form>

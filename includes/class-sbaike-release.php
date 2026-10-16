@@ -97,6 +97,17 @@ class SBAIKE_Release {
 			5 * MINUTE_IN_SECONDS
 		);
 
+		// Publish posted in the background wants the answer, not the page. The
+		// notice is still saved, so it shows when the popup's Close reloads.
+		if ( ! empty( $_POST['sbaike_background'] ) ) {
+			wp_send_json(
+				[
+					'ok'      => $type === 'success',
+					'message' => trim( wp_strip_all_tags( $message ) ),
+				]
+			);
+		}
+
 		wp_safe_redirect( admin_url( 'admin.php?page=' . SBAIKE_Admin::PAGE_SLUG . '-publishing' ) );
 		exit;
 	}
@@ -319,7 +330,27 @@ class SBAIKE_Release {
 		$files    = $this->files();
 		$tree     = [];
 		$keep     = [ 'README.md', 'LICENSE', '.gitignore', '.github' ];
-		$top      = $this->github( 'GET', $git . '/trees/' . $old_tree, $token );
+		$known    = [];
+
+		/**
+		 * What the repo already holds, file by file, so anything unchanged is
+		 * pointed at rather than sent again. Every publish used to send all of
+		 * it: the text files in one big request and each of the 37 others (the
+		 * update checker's translations and the icons) in one of its own,
+		 * though they almost never change. If the full listing cannot be had,
+		 * everything is sent as before.
+		 */
+		$top = $this->github( 'GET', $git . '/trees/' . $old_tree . '?recursive=1', $token );
+
+		if ( $top['code'] === 200 && ! empty( $top['body']['tree'] ) && empty( $top['body']['truncated'] ) ) {
+			foreach ( $top['body']['tree'] as $entry ) {
+				if ( isset( $entry['type'], $entry['path'], $entry['sha'] ) && $entry['type'] === 'blob' ) {
+					$known[ $entry['path'] ] = $entry['sha'];
+				}
+			}
+		} else {
+			$top = $this->github( 'GET', $git . '/trees/' . $old_tree, $token );
+		}
 
 		if ( $top['code'] === 200 && ! empty( $top['body']['tree'] ) ) {
 			foreach ( $top['body']['tree'] as $entry ) {
@@ -336,6 +367,21 @@ class SBAIKE_Release {
 
 		foreach ( $files as $rel => $abs ) {
 			$content = (string) file_get_contents( $abs );
+
+			// Git names a file by this hash of its contents, so the same hash
+			// means GitHub already has exactly this file.
+			$sha = sha1( 'blob ' . strlen( $content ) . chr( 0 ) . $content );
+
+			if ( isset( $known[ $rel ] ) && $known[ $rel ] === $sha ) {
+				$tree[] = [
+					'path' => $rel,
+					'mode' => '100644',
+					'type' => 'blob',
+					'sha'  => $sha,
+				];
+				continue;
+			}
+
 			$binary  = strpos( $content, "\0" ) !== false || ! preg_match( '//u', $content );
 
 			if ( ! $binary ) {
@@ -793,7 +839,7 @@ class SBAIKE_Release {
 						<div class="sbaike-release__actions">
 							<button type="submit" class="button button-primary"><?php esc_html_e( 'Save token', 'socialbump-ai-knowledge-exporter' ); ?></button>
 							<?php if ( $token !== '' ) : ?>
-								<button type="submit" name="sbaike_remove_token" value="1" class="button-link button-link-delete" onclick="return confirm('Remove the saved GitHub token?');"><?php esc_html_e( 'Remove token', 'socialbump-ai-knowledge-exporter' ); ?></button>
+								<button type="submit" name="sbaike_remove_token" value="1" class="button-link button-link-delete" data-sbaike-confirm="<?php esc_attr_e( 'Remove the saved GitHub token? Publishing stays switched off until a new one is saved.', 'socialbump-ai-knowledge-exporter' ); ?>" data-sbaike-confirm-title="<?php esc_attr_e( 'Remove token', 'socialbump-ai-knowledge-exporter' ); ?>" data-sbaike-confirm-action="<?php esc_attr_e( 'Remove', 'socialbump-ai-knowledge-exporter' ); ?>"><?php esc_html_e( 'Remove token', 'socialbump-ai-knowledge-exporter' ); ?></button>
 							<?php endif; ?>
 						</div>
 					</form>
@@ -807,7 +853,7 @@ class SBAIKE_Release {
 						printf( esc_html__( 'This site: %1$s. Latest on GitHub: %2$s.', 'socialbump-ai-knowledge-exporter' ), '<strong>' . esc_html( $current ) . '</strong>', '<strong>' . ( $latest !== '' ? esc_html( $latest ) : esc_html__( 'none yet', 'socialbump-ai-knowledge-exporter' ) ) . '</strong>' );
 						?>
 					</p>
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<form id="sbaike-publish-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 						<input type="hidden" name="action" value="sbaike_publish">
 						<?php wp_nonce_field( 'sbaike_publish' ); ?>
 						<label for="sbaike_version"><?php esc_html_e( 'New version number', 'socialbump-ai-knowledge-exporter' ); ?></label>
@@ -857,9 +903,93 @@ class SBAIKE_Release {
 							</p>
 						<?php endif; ?>
 						<div class="sbaike-release__actions">
-							<button type="submit" class="button button-primary" <?php disabled( $token === '' ); ?> onclick="return confirm('Publish version ' + this.form.sbaike_version.value + ' to every site running this plugin?');"><?php esc_html_e( 'Publish release', 'socialbump-ai-knowledge-exporter' ); ?></button>
+							<button type="submit" class="button button-primary" <?php disabled( $token === '' ); ?> data-sbaike-confirm="<?php esc_attr_e( 'Publish version %s to every site running this plugin?', 'socialbump-ai-knowledge-exporter' ); ?>" data-sbaike-confirm-field="sbaike_version" data-sbaike-confirm-title="<?php esc_attr_e( 'Publish release', 'socialbump-ai-knowledge-exporter' ); ?>" data-sbaike-confirm-action="<?php esc_attr_e( 'Publish', 'socialbump-ai-knowledge-exporter' ); ?>"><?php esc_html_e( 'Publish release', 'socialbump-ai-knowledge-exporter' ); ?></button>
 						</div>
 					</form>
+					<?php
+					/**
+					 * Publish posts in the background, so the page stays put and the
+					 * spinner keeps turning until GitHub has answered. A normal post
+					 * starts leaving the page at once, and the browser stops animating
+					 * while it waits. With sbaike_background sent, back() answers with
+					 * JSON instead of redirecting, and the result shows in the progress
+					 * popup. Close reloads the page, which shows the usual notice too.
+					 * Without JavaScript the form posts the old way.
+					 */
+					$publish_text = [
+						'title'    => __( 'Publishing', 'socialbump-ai-knowledge-exporter' ),
+						/* translators: %s: version number */
+						'status'   => __( 'Building, pushing to GitHub and publishing %s', 'socialbump-ai-knowledge-exporter' ),
+						/* translators: %s: version number */
+						'item'     => __( 'SEO for AI %s', 'socialbump-ai-knowledge-exporter' ),
+						'went'     => __( 'published', 'socialbump-ai-knowledge-exporter' ),
+						'complete' => __( 'Publishing complete', 'socialbump-ai-knowledge-exporter' ),
+						'unclear'  => __( 'No clear answer came back from the server, so check GitHub and this page before trying again.', 'socialbump-ai-knowledge-exporter' ),
+						'dropped'  => __( 'The connection dropped before an answer came back, so check GitHub and this page before trying again.', 'socialbump-ai-knowledge-exporter' ),
+					];
+					?>
+					<script>
+					( function () {
+						var form = document.getElementById( 'sbaike-publish-form' );
+						var text = <?php echo wp_json_encode( $publish_text ); ?>;
+
+						if ( ! form || ! window.fetch || ! window.FormData ) {
+							return;
+						}
+
+						form.addEventListener( 'submit', function ( event ) {
+							// Looked for here, not when the page loads: the popup script loads
+							// in the footer, after this one, so it is never there that early.
+							if ( ! window.SBAIKEProgress ) {
+								return;
+							}
+
+							var parts = form.elements.sbaike_version.value.trim().split( '.' );
+							var data  = new FormData( form );
+							var job;
+
+							event.preventDefault();
+
+							// 1.1 is published as 1.1.0, so say that.
+							while ( parts.length < 3 ) {
+								parts.push( '0' );
+							}
+
+							job = window.SBAIKEProgress.open( text.title );
+							job.busy();
+							job.status( text.status.replace( '%s', parts.join( '.' ) ) );
+							data.append( 'sbaike_background', '1' );
+
+							// getAttribute, because form.action is the hidden field named action.
+							window.fetch( form.getAttribute( 'action' ), { method: 'POST', body: data, credentials: 'same-origin' } )
+								.then( function ( response ) {
+									return response.text();
+								} )
+								.then( function ( body ) {
+									var res = null;
+
+									// Anything PHP printed before the answer is skipped.
+									try {
+										res = JSON.parse( body.slice( Math.max( 0, body.indexOf( '{"ok"' ) ) ) );
+									} catch ( err ) {
+										res = null;
+									}
+
+									if ( ! res || typeof res.ok !== 'boolean' ) {
+										job.fail( text.unclear );
+									} else if ( ! res.ok ) {
+										job.fail( res.message || text.unclear );
+									} else {
+										job.log( text.item.replace( '%s', parts.join( '.' ) ), text.went );
+										job.finish( text.complete );
+									}
+								} )
+								.catch( function () {
+									job.fail( text.dropped );
+								} );
+						} );
+					}() );
+					</script>
 				</div>
 
 				<div class="sbaike-card sbaike-release__card">

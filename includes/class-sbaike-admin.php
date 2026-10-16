@@ -832,6 +832,20 @@ class SBAIKE_Admin {
 		wp_enqueue_script( 'wp-a11y' );
 		wp_enqueue_script( 'common' );
 
+		// The progress popup, for Publish release.
+		$progress = SBAIKE_PATH . 'assets/js/progress.js';
+
+		if ( file_exists( $progress ) ) {
+			wp_enqueue_script( 'sbaike-progress', SBAIKE_URL . 'assets/js/progress.js', [], SBAIKE_VERSION . '.' . filemtime( $progress ), true );
+		}
+
+		// The confirm popup, for anything that asks before it acts.
+		$confirm = SBAIKE_PATH . 'assets/js/confirm.js';
+
+		if ( file_exists( $confirm ) ) {
+			wp_enqueue_script( 'sbaike-confirm', SBAIKE_URL . 'assets/js/confirm.js', [ 'jquery' ], SBAIKE_VERSION . '.' . filemtime( $confirm ), true );
+		}
+
 		// Rebuilding runs in batches, with a progress bar.
 		$rebuild = SBAIKE_PATH . 'assets/js/rebuild.js';
 

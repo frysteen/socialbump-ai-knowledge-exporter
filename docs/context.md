@@ -231,6 +231,7 @@ core file prints. Change that markup and check these still work.
 | extensions/bricks-builder.php | 23 KB | Bricks detection and template relationships, not content |
 | extensions/elementor.php | 7 KB | the same for Elementor |
 | assets/js/rebuild.js | 9 KB | the progress bar |
+| assets/js/progress.js | 7 KB | the progress popup for Publish release, SBAIKEProgress |
 
 ## What it offers other code
 
@@ -929,3 +930,77 @@ The Install button is generic: any site with a plugin that some module's
 replaces names, and no SocialBUMP Tweaks, gets it once its reporter is 1.2.0
 or later. When the Site Kit module lands with replaces set, Site Kit only sites
 get it with no further change.
+
+## Publish posts in the background (October 2026)
+
+Publish release used to post the page with only the browser's confirm() and
+no progress popup. The Publishing pages of all three hub plugins (this one,
+Site Kit and SocialBUMP Tweaks) now post it in the background with a spinner,
+so the page stays live until GitHub has answered and the result shows in a
+popup.
+
+- assets/js/progress.js is new: a copy of SocialBUMP Tweaks' progress popup as
+  window.SBAIKEProgress, with busy() (a spinner in place of the bar for one
+  step with no telling how long it will take). Its report list carries
+  sbaike-job__list so it never picks up the rebuild report's styles, and
+  rebuild.js keeps its own popup. Enqueued in SBAIKE_Admin::styles() on every
+  page of the plugin. The styles (spinner, .is-busy, sbaike-job-spin keyframes,
+  __summary, __list) are in admin.css after .sbaike-job__current.
+- SBAIKE_Release::render(): the publish form has id sbaike-publish-form and an
+  inline script after it. On submit (after the browser's confirm() and its own
+  validation) it opens the popup with busy(), sends the same form with fetch
+  plus sbaike_background=1, and shows "SEO for AI x.y.z published" and
+  "Publishing complete", or fail() with the handler's message. A reply that is
+  not the JSON, or a dropped connection, fails with "No clear answer came
+  back", because the publish may still have gone through. Close reloads the
+  page, which shows the usual notice and the new version.
+- back() still saves the notice, then, with sbaike_background set, answers
+  wp_send_json( { ok, message } ) instead of redirecting. Without the field it
+  redirects as before, which is what SocialBUMP Tweaks' Publish on the Installs
+  page relies on.
+- The confirm is still the browser's own confirm(). Left for Sam to decide.
+- Hub only in effect, so no release note.
+- Checked: progress.js passes node --check. In jsdom: the spinner while
+  waiting, then success, a refused publish, an HTML answer, a dropped
+  connection, and a cancelled confirm posting nothing. On the hub over HTTP
+  with a session: the Publishing page loads with progress.js; a background
+  post with the current version comes back as JSON ok false "has to be higher
+  than the current version" with the main file untouched; the same post
+  without the field still redirects (302). Not yet seen in a browser, and no
+  real publish has been run through it yet.
+- Fix, same day: the first real publish failed at once with No clear answer. The
+  script fetched form.action, and in a browser that is the hidden input named
+  action, not the form's address, so the post went to a junk URL and never
+  reached WordPress (nothing was published). It now uses
+  form.getAttribute( 'action' ). jsdom does not do that lookup, which is why
+  the simulation passed; the test now fakes it, failed the old code, and
+  passes the fix.
+- Fix, a day later: on this page the popup never opened and Publish posted the
+  old way. The inline script checked for the progress popup when the page
+  loaded, but the popup script loads in the footer, after it, so the check
+  always failed. It now checks when Publish is pressed. The jsdom test had
+  loaded the popup script first; it now loads it last, as the page does.
+## Faster publish (October 2026)
+
+push_code() now lists the repo's tree once (?recursive=1) and works out git's
+blob hash for each local file (sha1 of "blob <length>\0<contents>"). A file
+whose hash matches is put in the new tree by that sha and not sent again;
+only changed files go inline or as blobs. It used to send everything each
+time, including 37 non-text files (the update checker's .mo translations and
+the icons) as a request each. If the listing fails or comes back truncated it
+sends everything as before. Proven first in Site Kit: its publish went from
+32 to 11 seconds, and afterwards every file on GitHub matched the hub. A dry
+run here showed most files would be reused. Hub only, no release note.
+
+## Confirm popup (October 2026)
+
+assets/js/confirm.js is a copy of SocialBUMP Tweaks' confirm popup as
+window.SBAIKEConfirm, with styles .sbaike-modal and .sbaike-dialog* in
+admin.css, enqueued in SBAIKE_Admin::styles() on every page of the plugin.
+Nothing here uses the browser's confirm() any more. A button carries the
+question as data-sbaike-confirm, with -field (its value replaces %s), -title
+and -action; on the action it is clicked again with a one shot pass, so the
+form submits as before. Converted: Publish release and Remove token
+(Publishing), Import settings (Updates, class-sbaike-transfer.php), and Delete
+files and Reset everything on the Settings page, whose forms used onsubmit
+confirms and now carry the question on their buttons. Release note queued.

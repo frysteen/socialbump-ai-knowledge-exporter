@@ -94,7 +94,7 @@ class SBAIKE_Transfer {
 		echo '<input type="hidden" name="action" value="sbaike_import_settings">';
 		wp_nonce_field( 'sbaike_import_settings' );
 		echo '<p><input type="file" name="sbaike_settings_file" accept="application/json,.json" required></p>';
-		echo '<p><button type="submit" class="button" onclick="return confirm(&#39;Replace the exporter settings on this site?&#39;);">' . esc_html__( 'Import settings', 'socialbump-ai-knowledge-exporter' ) . '</button></p>';
+		echo '<p><button type="submit" class="button" data-sbaike-confirm="' . esc_attr__( 'Replace the SEO for AI settings on this site with the ones in the file?', 'socialbump-ai-knowledge-exporter' ) . '" data-sbaike-confirm-title="' . esc_attr__( 'Import settings', 'socialbump-ai-knowledge-exporter' ) . '" data-sbaike-confirm-action="' . esc_attr__( 'Import', 'socialbump-ai-knowledge-exporter' ) . '">' . esc_html__( 'Import settings', 'socialbump-ai-knowledge-exporter' ) . '</button></p>';
 		echo '</form></div>';
 
 		echo '</div></section>';
