@@ -1949,3 +1949,50 @@ a.sb-toggle:focus {
 .sbaike-dialog .sbaike-job__report {
 	margin: 0 0 18px;
 }
+
+/* Download plugin zip: the published zip, and a test build when there are
+   unpublished changes. */
+.sbaike-release__card form.sbaike-release__download {
+	margin-top: 0;
+}
+.sbaike-release__download + .sbaike-release__download {
+	padding-top: 12px;
+	border-top: 1px solid #dcdcde;
+}
+/* New version number: Reset sits inside the box when the number has been
+   changed from the automatic one. */
+.sbaike-release__version {
+	position: relative;
+}
+.sbaike-release__card .sbaike-release__version input[type="text"] {
+	padding-right: 130px;
+}
+.sbaike-release__reset {
+	position: absolute;
+	top: 50%;
+	right: 6px;
+	transform: translateY(-50%);
+	padding: 3px 12px;
+	border: 0;
+	border-radius: 3px;
+	background: #d63638;
+	color: #fff;
+	font-size: 13px;
+	line-height: 1.6;
+	cursor: pointer;
+}
+.sbaike-release__reset:hover,
+.sbaike-release__reset:focus {
+	background: #b32d2e;
+}
+.sbaike-release__reset[hidden] {
+	display: none;
+}
+.sbaike-release__version-note {
+	margin: 0;
+	color: #008a20;
+	font-size: 12px;
+}
+.sbaike-release__version-note.is-error {
+	color: #d63638;
+}

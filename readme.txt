@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.8
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Generates AI-friendly llms.txt knowledge exports from WordPress content, custom 
 
 == Description ==
 
-SocialBUMP SEO for AI generates llms.txt, llms-full.txt and llms-details.txt files for a WordPress website.
+SocialBUMP SEO for AI generates llms.txt and llms-full.txt files for a WordPress website, plus llms-details.txt, a map of how the site is built that admins download from the plugin page. It is never published on the site.
 
 The plugin is organised as a core exporter with separate extensions for rendered content, Bricks Builder and Elementor. The exporter is the core, with separate modules for rendered content, Bricks Builder and Elementor. Each module detects what it needs and steps in on its own.
 
@@ -24,6 +24,14 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.2.0 =
+* Updating a page whose content has emoji in it (Google reviews, say) now saves on sites whose database tables cannot store emoji, instead of showing as needing an update again straight away. A post that still cannot be saved is marked in the progress list.
+* Booking links no longer carry the plugin's temporary render code (it was being copied into FareHarbor's back links).
+* Bare image addresses (galleries) and the duplicate address above each post in blog listings are left out of the files.
+* A page's own headings now sit under its entry in llms-full.txt and llms-details.txt, and the file header shows the plugin's version. Every page renders again after updating, so run Update Files once.
+* llms-details.txt is no longer published on the site, as it maps how the site is built. Admins download it from the SEO for AI page instead, and a copy an earlier version left in the site root is removed.
+* Publishing page (plugins site only): Download plugin zip now offers the published version, fetched from GitHub, and a test build named -beta when there are unpublished changes. The New version number box saves a number you type in and shows a Reset button to go back to the automatic one.
 
 = 1.1.8 =
 * Reset everything, Delete files and Import settings now ask in the SocialBUMP style popup instead of the browser's own box.

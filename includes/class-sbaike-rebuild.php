@@ -168,7 +168,7 @@ class SBAIKE_Rebuild {
 		$labels = [];
 
 		foreach ( $slice as $id ) {
-			$core->cache_post( $id );
+			$saved = $core->cache_post( $id );
 
 			$type = get_post_type( $id );
 
@@ -179,7 +179,7 @@ class SBAIKE_Rebuild {
 
 			$title  = get_the_title( $id );
 			$title  = $title !== '' ? html_entity_decode( $title, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) : ( '#' . $id );
-			$done[] = $labels[ $type ] . ': ' . $title;
+			$done[] = $labels[ $type ] . ': ' . $title . ( $saved ? '' : ' (' . __( 'could not be saved', 'socialbump-ai-knowledge-exporter' ) . ')' );
 		}
 
 		$position = $offset + count( $slice );

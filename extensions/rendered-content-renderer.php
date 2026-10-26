@@ -101,6 +101,31 @@ class SocialBump_AI_Knowledge_Render_Request {
 	}
 
 	/**
+	 * Take render tokens back out of a page. A page can print its own address
+	 * (FareHarbor's Book Now buttons put it in a back= link), and that address
+	 * carries the token: 36 links in each file on terracemarina.com.au. Plain,
+	 * &amp; and URL-encoded forms (once or twice) all go, and any token, not
+	 * only this build's, so an old one in a cached page goes too.
+	 */
+	public static function unsign( string $text ): string {
+		if ( $text === '' || strpos( $text, self::ARG ) === false ) {
+			return $text;
+		}
+
+		$arg = preg_quote( self::ARG, '/' );
+
+		// Another parameter follows: keep the separator in front, drop the token.
+		$text = preg_replace( '/(\?|&amp;|&)' . $arg . '=[A-Za-z0-9]+(?:&amp;|&)(?=[A-Za-z0-9_\-])/', '$1', $text );
+		$text = preg_replace( '/(%(?:25)?3F|%(?:25)?26)' . $arg . '%(?:25)?3D[A-Za-z0-9]+%(?:25)?26(?=[A-Za-z0-9_\-])/i', '$1', $text );
+
+		// Nothing follows: the token and its separators go.
+		$text = preg_replace( '/(?:\?|&amp;|&)' . $arg . '=[A-Za-z0-9]+(?:&amp;|&)?/', '', $text );
+		$text = preg_replace( '/(?:%(?:25)?3F|%(?:25)?26)' . $arg . '%(?:25)?3D[A-Za-z0-9]+(?:%(?:25)?26)?/i', '', $text );
+
+		return (string) $text;
+	}
+
+	/**
 	 * Stand the holding page down for this one request.
 	 *
 	 * Bricks offers a filter for it. Anything else can hook the action, so a
@@ -193,6 +218,9 @@ class SocialBump_AI_Knowledge_Renderer {
         if ( $html === '' ) {
             return $content;
         }
+
+        // The page can print its own address back, token and all.
+        $html = SocialBump_AI_Knowledge_Render_Request::unsign( $html );
 
         $stripped = $this->strip_chrome( $html );
 

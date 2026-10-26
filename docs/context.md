@@ -16,13 +16,14 @@ has to change it.
 
 ## What it does
 
-Builds three files that describe the whole site for AI crawlers:
+Builds three files that describe the whole site:
 
-- llms.txt, a slim index.
-- llms-full.txt, every chosen post with its content as Markdown.
-- llms-details.txt, the same plus notes on how the site is put together.
+- llms.txt, a slim index. Public.
+- llms-full.txt, every chosen post with its content as Markdown. Public.
+- llms-details.txt, the same plus notes on how the site is put together. Never
+  published: admins download it from the plugin page (see Serving).
 
-They are served virtually from the cache by default, with no files on disk, which
+The two public files are served virtually from the cache by default, with no files on disk, which
 needs pretty permalinks. Physical mode writes real files to the site root.
 
 ## Where it came from
@@ -94,24 +95,24 @@ under Settings, Content Rendering if it is bloat.
 | --- | --- |
 | llms.txt | the slim one: business block, then an index of every included post by type and taxonomy, with links |
 | llms-full.txt | the same, plus the whole content of every post as Markdown, plus its chosen custom fields |
-| llms-details.txt | everything in full, plus notes on how the site is built: which builder made a page, template relationships, field names |
+| llms-details.txt (admin download only) | everything in full, plus notes on how the site is built: which builder made a page, template relationships, field names |
 
 All three are assembled from the same cache in one pass. That is why writing them
 is cheap and rendering is not.
 
 ## Serving
 
-Virtual is the default and the one to use. The three routes are served straight
+Virtual is the default and the one to use. The two routes are served straight
 from the cache through a rewrite rule, with nothing on disk, so a file can never
 fall out of step with the settings. It needs pretty permalinks, any setting other
 than Plain.
 
-Physical writes real files to the WordPress root, for a host where the rewrite
+Physical writes llms.txt and llms-full.txt to the WordPress root, for a host where the rewrite
 cannot work. Switching back to virtual deletes them, so a stale file cannot
 shadow the live one.
 
 On a site in coming soon or maintenance mode the holding page answers the
-three routes too, the hub included, so test serving on a live site such as
+two routes too, the hub included, so test serving on a live site such as
 thecosmeticstudionoosa.com.au rather than the blueprint.
 
 A route asked for while the store is empty, or physical mode with the file
@@ -128,8 +129,26 @@ the files are served (virtual store has content, or the physical llms.txt
 exists), not on a site discouraging search engines, and not if llms.txt is
 already named. Crawlers ignore comments; it is a pointer for people and tools.
 
-Tell a caching plugin to leave /llms.txt, /llms-full.txt and /llms-details.txt
-alone, especially in virtual mode, or it will serve yesterday text.
+Tell a caching plugin to leave /llms.txt and /llms-full.txt alone, especially
+in virtual mode, or it will serve yesterday text.
+
+### llms-details.txt is admin-only (October 2026)
+
+It maps how the site is built: post IDs, builders, templates, field names. That
+helps nobody outside and helps anyone probing the site, so it is never
+published. regenerate_outputs() still builds it and keeps it in the
+socialbump_ai_virtual_store option in both modes; physical mode writes only the
+two public files. The Download llms-details.txt links on the plugin page go
+through admin-post.php?action=socialbump_download_details (manage_options and a
+nonce) and send it as llms-details-<host>.txt. With nothing stored it is built
+from the cache with suppress_render on.
+
+/llms-details.txt answers 404. The rewrite rule is gone, and a site still
+carrying the old rule gets a 404 from maybe_serve_virtual_file(). Rewrite rules
+now flush once per plugin release (rewrite_key()), not only when the core
+module's version changes. maybe_unpublish_details_file() on admin_init removes
+an llms-details.txt an earlier version wrote to the root, once per site, trying
+again on each admin load until it goes.
 
 ## Custom fields
 
@@ -1004,3 +1023,60 @@ form submits as before. Converted: Publish release and Remove token
 (Publishing), Import settings (Updates, class-sbaike-transfer.php), and Delete
 files and Reset everything on the Settings page, whose forms used onsubmit
 confirms and now carry the question on their buttons. Release note queued.
+
+## Emoji in the cache (October 2026)
+
+A post whose render held an emoji never saved on terracemarina.com.au: the
+core tables there are still utf8mb3, which refuses four-byte characters, and
+update_post_meta() failed without an error. The home page, which shows Google
+reviews with emoji in them, read as needing an update straight after every
+Update. render_and_cache_post_markdown() now stores four-byte characters as
+&#x...; references (encode_wide_chars()) with 'encoded' => true in the cache
+entry, and get_cached_post_markdown() turns them back (decode_wide_chars()), so
+the files still carry the emoji. cache_post() returns whether the entry is
+actually fresh afterwards, and the batch runner marks a post it could not save
+"(could not be saved)" in the progress list instead of reporting it done.
+
+## Output review on terracemarina.com.au (October 2026)
+
+The first Elementor site. Fixed after reading all three files:
+
+- Render token in links. FareHarbor's Book Now buttons print the page's own
+  address into a back= link, and the fetched address carries the render token,
+  so 36 links per file held ?sbaike_render=... The token only lets a page be
+  read and lasts five minutes, but it was junk in public files.
+  SocialBump_AI_Knowledge_Render_Request::unsign() takes any render token out
+  of the fetched HTML (plain, &amp; and URL-encoded) before conversion.
+- Bare addresses. tidy_markdown() runs on every body before it is cached,
+  whichever way it was made: a line that is only an image address goes (a
+  gallery page rendered empty, fell through to post_content and kept 30 of
+  them), and a line that is only a page address goes when the same address is
+  linked within the next six lines (linked featured images in blog listings).
+  It also trims leading blank lines.
+- Heading levels. nest_headings() pushes a body's headings down three levels
+  when the files are written (# to ####, deeper stops at ######), so a page's
+  own H1 sits under its ### entry. The cache keeps the page's own levels.
+- The header's Version: line shows SBAIKE_VERSION, not the core module's 1.0.0.
+
+The fingerprint carries 'render_scheme' => 2, so every cached body renders
+again after the update: run Update Files (or Full Rebuild) on each site.
+
+## Publishing page downloads and saved version (October 2026)
+
+Brought across from SocialBUMP Tweaks so the hub plugins match.
+
+- Download plugin zip offers two zips. Download <published> fetches the zip
+  attached to the latest GitHub release (published_zip()), so it is exactly
+  what the sites update from. Download test build appears only while changes
+  are queued: this site's files as they are now, with the main file inside the
+  zip bumped to <next version>-beta (build_zip( $version )). The files on disk
+  are not touched. version_compare() puts 1.1.9-beta below 1.1.9, so a site
+  running a test build still takes the real release as an update.
+- New version number saves when the box loses focus (wp_ajax
+  sbaike_save_next_version, option sbaike_next_version), so the test build and
+  later visits use it. A red Reset to <auto> inside the box shows only when the
+  saved number differs from the next patch; it clears the option. A number not
+  above this site's version is refused. Publish clears the option.
+- Tested on the hub: 1.2 saved as 1.2.0 with a 1.2.0-beta test build name, 1.1.8
+  refused, Reset back to 1.1.9; the published zip came down as 1.1.8 and the
+  test build as 1.1.9-beta with the version changed only inside the zip.
