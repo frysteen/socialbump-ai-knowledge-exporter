@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.2.1 =
+* Update Files no longer stays greyed out after an update or a settings change while pages need updating. The saved count of pages to update is now recounted when it was made under different settings.
 
 = 1.2.0 =
 * Updating a page whose content has emoji in it (Google reviews, say) now saves on sites whose database tables cannot store emoji, instead of showing as needing an update again straight away. A post that still cannot be saved is marked in the progress list.

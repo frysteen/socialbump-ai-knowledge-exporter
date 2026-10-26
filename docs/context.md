@@ -1080,3 +1080,15 @@ Brought across from SocialBUMP Tweaks so the hub plugins match.
 - Tested on the hub: 1.2 saved as 1.2.0 with a 1.2.0-beta test build name, 1.1.8
   refused, Reset back to 1.1.9; the published zip came down as 1.1.8 and the
   test build as 1.1.9-beta with the version changed only inside the zip.
+
+## Stale count kept with its fingerprint (October 2026)
+
+After 1.2.0 went onto terracemarina.com.au, Update Files was greyed out while the
+status pills said every page needed updating. get_global_stale_count() keeps its
+total in the sbaike_global_stale_count transient for five minutes, and the
+admin bar had saved 0 just before the update; render_scheme 2 then made every
+post stale without touching the transient. The pills count live, the button
+reads the transient. The transient now holds [ count, fingerprint ] and is only
+believed when the fingerprint still matches, so an update or settings change
+that stales everything is recounted at once. A plain number from an older
+version is recounted too.

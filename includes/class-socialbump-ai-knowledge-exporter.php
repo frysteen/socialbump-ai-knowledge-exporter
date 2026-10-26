@@ -4279,10 +4279,17 @@ class SocialBump_AI_Knowledge_Exporter {
      * safety net. Pass $force = true to bypass and recompute.
      */
     public function get_global_stale_count( bool $force = false ): int {
+        // The count is kept with the fingerprint it was made under. An update
+        // or a settings change that makes every post stale changes the
+        // fingerprint, so a count of 0 saved just before it is not believed:
+        // that left Update Files greyed out on terracemarina.com.au while
+        // every post needed updating. An older plain number is recounted.
+        $fingerprint = $this->get_settings_fingerprint();
+
         if ( ! $force ) {
             $cached = get_transient( 'sbaike_global_stale_count' );
-            if ( $cached !== false ) {
-                return (int) $cached;
+            if ( is_array( $cached ) && isset( $cached['count'] ) && ( $cached['fingerprint'] ?? '' ) === $fingerprint ) {
+                return (int) $cached['count'];
             }
         }
 
@@ -4293,7 +4300,7 @@ class SocialBump_AI_Knowledge_Exporter {
             $total += $this->count_stale_posts_for_type( $pt );
         }
 
-        set_transient( 'sbaike_global_stale_count', $total, 5 * MINUTE_IN_SECONDS );
+        set_transient( 'sbaike_global_stale_count', [ 'count' => $total, 'fingerprint' => $fingerprint ], 5 * MINUTE_IN_SECONDS );
 
         return $total;
     }
