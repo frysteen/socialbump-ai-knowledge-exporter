@@ -4,7 +4,7 @@ Tags: llms.txt, ai, seo, acf
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ The plugin is organised as a core exporter with separate extensions for rendered
 4. Generate the knowledge files.
 
 == Changelog ==
+
+= 1.2.2 =
+* Reporter 1.3.0: lets the hub send SocialBUMP Tweaks betas to this site.
 
 = 1.2.1 =
 * Update Files no longer stays greyed out after an update or a settings change while pages need updating. The saved count of pages to update is now recounted when it was made under different settings.

@@ -25,6 +25,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * standalone plugins into its modules. Since 1.2.1 a report waits for the hub
  * to confirm it, and the answer to a push carries the site's report, so the hub
  * never relies on a separate report arriving while it waits on the site.
+ * Since 1.3.0 a pushed update can also be a beta of SocialBUMP Tweaks
+ * (0.5.0-beta.2): still signed by the hub, still only from the plugin's own
+ * GitHub release, and never older than what the site has. A beta site moves
+ * back on to releases by itself, as 0.5.0 is newer than any 0.5.0-beta.
  *
  * Loaded from each plugin's main file at the top level rather than on
  * plugins_loaded, so it is already listening when a plugin is activated.
@@ -33,7 +37,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 	class SocialBUMP_Reporter {
 
-		const VERSION  = '1.2.1';
+		const VERSION  = '1.3.0';
 		const ENDPOINT = 'https://plugins.socialbump.com.au/wp-json/sb-tweaks/v1/checkin';
 		const KEY      = 'sbump-installs-2026-4c8e1f7a93d2';
 		const HUB_HOST = 'plugins.socialbump.com.au';
@@ -52,7 +56,6 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 
 		/** Every SocialBUMP plugin the hub keeps track of, by folder. */
 		const PLUGINS = [
-			'socialbump-site-kit',
 			'socialbump-bricks-tweaks',
 			'socialbump-ai-knowledge-exporter',
 			'socialbump-tweaks',
@@ -348,7 +351,7 @@ if ( ! class_exists( 'SocialBUMP_Reporter' ) ) {
 			$slug    = (string) ( $job['plugin'] ?? '' );
 			$version = (string) ( $job['version'] ?? '' );
 
-			if ( ! in_array( $slug, self::PLUGINS, true ) || ! preg_match( '/^\d+(\.\d+){1,3}$/', $version ) ) {
+			if ( ! in_array( $slug, self::PLUGINS, true ) || ! preg_match( '/^\d+(\.\d+){1,3}(-beta\.\d{1,3})?$/', $version ) ) {
 				return self::refuse( 'Only SocialBUMP plugins can be updated this way.', 403 );
 			}
 
